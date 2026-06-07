@@ -1,0 +1,94 @@
+﻿# npm audit report
+
+fast-xml-parser  <5.3.8
+fast-xml-parser has stack overflow in XMLBuilder with preserveOrder - https://github.com/advisories/GHSA-fj3w-jwp8-x2g3
+fix available via `npm audit fix --force`
+Will install @aws-sdk/client-s3@3.893.0, which is a breaking change
+node_modules/fast-xml-parser
+  @aws-sdk/xml-builder  >=3.894.0
+  Depends on vulnerable versions of fast-xml-parser
+  node_modules/@aws-sdk/xml-builder
+    @aws-sdk/core  >=3.894.0
+    Depends on vulnerable versions of @aws-sdk/xml-builder
+    node_modules/@aws-sdk/core
+      @aws-sdk/client-s3  >=3.894.0
+      Depends on vulnerable versions of @aws-sdk/core
+      Depends on vulnerable versions of @aws-sdk/credential-provider-node
+      Depends on vulnerable versions of @aws-sdk/middleware-flexible-checksums
+      Depends on vulnerable versions of @aws-sdk/middleware-sdk-s3
+      Depends on vulnerable versions of @aws-sdk/middleware-user-agent
+      Depends on vulnerable versions of @aws-sdk/signature-v4-multi-region
+      Depends on vulnerable versions of @aws-sdk/util-user-agent-node
+      node_modules/@aws-sdk/client-s3
+      @aws-sdk/credential-provider-env  >=3.894.0
+      Depends on vulnerable versions of @aws-sdk/core
+      node_modules/@aws-sdk/credential-provider-env
+      @aws-sdk/credential-provider-http  >=3.894.0
+      Depends on vulnerable versions of @aws-sdk/core
+      node_modules/@aws-sdk/credential-provider-http
+        @aws-sdk/credential-provider-node  >=3.894.0
+        Depends on vulnerable versions of @aws-sdk/credential-provider-env
+        Depends on vulnerable versions of @aws-sdk/credential-provider-http
+        Depends on vulnerable versions of @aws-sdk/credential-provider-ini
+        Depends on vulnerable versions of @aws-sdk/credential-provider-process
+        Depends on vulnerable versions of @aws-sdk/credential-provider-sso
+        Depends on vulnerable versions of @aws-sdk/credential-provider-web-identity
+        node_modules/@aws-sdk/credential-provider-node
+      @aws-sdk/credential-provider-ini  >=3.894.0
+      Depends on vulnerable versions of @aws-sdk/core
+      Depends on vulnerable versions of @aws-sdk/credential-provider-env
+      Depends on vulnerable versions of @aws-sdk/credential-provider-http
+      Depends on vulnerable versions of @aws-sdk/credential-provider-login
+      Depends on vulnerable versions of @aws-sdk/credential-provider-process
+      Depends on vulnerable versions of @aws-sdk/credential-provider-sso
+      Depends on vulnerable versions of @aws-sdk/credential-provider-web-identity
+      Depends on vulnerable versions of @aws-sdk/nested-clients
+      node_modules/@aws-sdk/credential-provider-ini
+      @aws-sdk/credential-provider-login  *
+      Depends on vulnerable versions of @aws-sdk/core
+      Depends on vulnerable versions of @aws-sdk/nested-clients
+      node_modules/@aws-sdk/credential-provider-login
+      @aws-sdk/credential-provider-process  >=3.894.0
+      Depends on vulnerable versions of @aws-sdk/core
+      node_modules/@aws-sdk/credential-provider-process
+      @aws-sdk/credential-provider-sso  >=3.894.0
+      Depends on vulnerable versions of @aws-sdk/core
+      Depends on vulnerable versions of @aws-sdk/nested-clients
+      Depends on vulnerable versions of @aws-sdk/token-providers
+      node_modules/@aws-sdk/credential-provider-sso
+      @aws-sdk/credential-provider-web-identity  >=3.894.0
+      Depends on vulnerable versions of @aws-sdk/core
+      Depends on vulnerable versions of @aws-sdk/nested-clients
+      node_modules/@aws-sdk/credential-provider-web-identity
+      @aws-sdk/middleware-flexible-checksums  >=3.894.0
+      Depends on vulnerable versions of @aws-sdk/core
+      node_modules/@aws-sdk/middleware-flexible-checksums
+      @aws-sdk/middleware-sdk-s3  >=3.894.0
+      Depends on vulnerable versions of @aws-sdk/core
+      node_modules/@aws-sdk/middleware-sdk-s3
+        @aws-sdk/signature-v4-multi-region  >=3.894.0
+        Depends on vulnerable versions of @aws-sdk/middleware-sdk-s3
+        node_modules/@aws-sdk/signature-v4-multi-region
+      @aws-sdk/middleware-user-agent  >=3.894.0
+      Depends on vulnerable versions of @aws-sdk/core
+      node_modules/@aws-sdk/middleware-user-agent
+        @aws-sdk/util-user-agent-node  >=3.894.0
+        Depends on vulnerable versions of @aws-sdk/middleware-user-agent
+        node_modules/@aws-sdk/util-user-agent-node
+      @aws-sdk/nested-clients  >=3.894.0
+      Depends on vulnerable versions of @aws-sdk/core
+      Depends on vulnerable versions of @aws-sdk/middleware-user-agent
+      Depends on vulnerable versions of @aws-sdk/util-user-agent-node
+      node_modules/@aws-sdk/nested-clients
+      @aws-sdk/token-providers  >=3.894.0
+      Depends on vulnerable versions of @aws-sdk/core
+      Depends on vulnerable versions of @aws-sdk/nested-clients
+      node_modules/@aws-sdk/token-providers
+
+19 low severity vulnerabilities
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force

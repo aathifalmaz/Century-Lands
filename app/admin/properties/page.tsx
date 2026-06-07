@@ -1,0 +1,238 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { MoreHorizontal, Plus, Search } from "lucide-react"
+import Link from "next/link"
+import NextImage from "next/image"
+import { BackgroundDecor } from "@/components/BackgroundDecor";
+
+import { getProperties, deleteProperty } from "@/lib/backend/properties"
+import { toast } from "sonner"
+
+export default function AdminPropertiesPage() {
+    const [properties, setProperties] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+    const [searchTerm, setSearchTerm] = useState("")
+    const [filterType, setFilterType] = useState("All")
+    const [filterStatus, setFilterStatus] = useState("All")
+    const [filterPrice, setFilterPrice] = useState("All")
+
+    useEffect(() => {
+        fetchProperties()
+    }, [])
+
+    const fetchProperties = async () => {
+        setLoading(true)
+        try {
+            const data = await getProperties()
+            setProperties(data)
+        } catch (error) {
+            toast.error("Failed to fetch properties")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this property?")) return
+
+        try {
+            await deleteProperty(id)
+            toast.success("Property deleted successfully")
+            fetchProperties()
+        } catch (error) {
+            toast.error("Failed to delete property")
+        }
+    }
+
+    // Helper to parse price string "LKR 8,500,000" -> 8500000
+    const parsePrice = (priceStr: string) => {
+        return parseInt(priceStr.replace(/\D/g, '')) || 0
+    }
+
+    // Filter properties
+    const filteredProperties = properties.filter(property => {
+        // Search
+        const matchesSearch =
+            (property.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (property.location || "").toLowerCase().includes(searchTerm.toLowerCase())
+
+        // Type Filter
+        const matchesType = filterType === "All" || property.propertyType === filterType
+
+        // Status Filter
+        const matchesStatus = filterStatus === "All" || property.status === filterStatus
+
+        // Price Filter
+        let matchesPrice = true
+        if (filterPrice !== "All") {
+            const price = parsePrice(property.price)
+            if (filterPrice === "under_10m") matchesPrice = price < 10000000
+            else if (filterPrice === "10m_50m") matchesPrice = price >= 10000000 && price <= 50000000
+            else if (filterPrice === "50m_100m") matchesPrice = price > 50000000 && price <= 100000000
+            else if (filterPrice === "above_100m") matchesPrice = price > 100000000
+        }
+
+        return matchesSearch && matchesType && matchesStatus && matchesPrice
+    })
+
+    return (
+        <div className="p-4 space-y-4">
+            <BackgroundDecor />
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">Properties</h2>
+                    <p className="text-muted-foreground">Manage your property listings.</p>
+                </div>
+                <Link href="/admin/properties/add">
+                    <Button className="hover:bg-secondary">
+                        <Plus className="mr-2 h-4 w-4" /> Add Property
+                    </Button>
+                </Link>
+            </div>
+
+            <div className="flex flex-row items-center gap-4 w-full">
+                <div className="relative flex-1 bg-white rounded-md">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search properties..."
+                        className="pl-9 w-full"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+
+                {/* Filters */}
+                <Select value={filterType} onValueChange={setFilterType}>
+                    <SelectTrigger className="w-[180px] bg-white">
+                        <SelectValue placeholder="Property Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="All">All Types</SelectItem>
+                        <SelectItem value="House">House</SelectItem>
+                        <SelectItem value="Apartment">Apartment</SelectItem>
+                        <SelectItem value="Villa">Villa</SelectItem>
+                        <SelectItem value="Land">Land</SelectItem>
+                        <SelectItem value="Commercial">Commercial</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="w-[180px] bg-white">
+                        <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="All">All Statuses</SelectItem>
+                        <SelectItem value="For Sale">For Sale</SelectItem>
+                        <SelectItem value="For Rent">For Rent</SelectItem>
+                        <SelectItem value="Sold">Sold</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <Select value={filterPrice} onValueChange={setFilterPrice}>
+                    <SelectTrigger className="w-[180px] bg-white">
+                        <SelectValue placeholder="Price Range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="All">All Prices</SelectItem>
+                        <SelectItem value="under_10m">Under 10M</SelectItem>
+                        <SelectItem value="10m_50m">10M - 50M</SelectItem>
+                        <SelectItem value="50m_100m">50M - 100M</SelectItem>
+                        <SelectItem value="above_100m">Above 100M</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div className="border rounded-md bg-white">
+                <Table>
+                    <TableHeader className="bg-slate-100">
+                        <TableRow>
+                            <TableHead className="w-[100px] pl-10">Image</TableHead>
+                            <TableHead className="pl-12">Title</TableHead>
+                            <TableHead>Location</TableHead>
+                            <TableHead>Price</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={7} className="h-24 text-center">
+                                    Loading properties...
+                                </TableCell>
+                            </TableRow>
+                        ) : filteredProperties.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={7} className="h-24 text-center">
+                                    No results.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredProperties.map((property) => (
+                                <TableRow key={property.id}>
+                                    <TableCell className="pl-10">
+                                        <div className="relative h-10 w-16 overflow-hidden rounded-md bg-slate-200">
+                                            <NextImage
+                                                src={(property.images && property.images.length > 0) ? property.images[0] : "/placeholder.png"}
+                                                alt={property.title || "Property Image"}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="font-medium pl-12">
+                                        {property.title}
+                                    </TableCell>
+                                    <TableCell>{property.location}</TableCell>
+                                    <TableCell>{property.price}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={
+                                            property.status === "For Sale" ? "default" :
+                                                property.status === "For Rent" ? "secondary" : "destructive"
+                                        }>
+                                            {property.status}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>{property.propertyType}</TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <span className="sr-only">Open menu</span>
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <Link href={`/admin/properties/${property.id}`}>
+                                                    <DropdownMenuItem>
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                </Link>
+                                                <DropdownMenuItem>View Details</DropdownMenuItem>
+                                                <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(property.id)}>Delete</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 py-4">
+                <div className="text-sm text-muted-foreground">
+                    Showing {filteredProperties.length} properties
+                </div>
+            </div>
+        </div>
+    )
+}
