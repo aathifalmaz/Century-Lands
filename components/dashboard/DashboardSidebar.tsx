@@ -1,10 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
+import { signOut } from "@/lib/backend/auth"
+import { toast } from "sonner"
 import {
     LayoutDashboard,
     Heart,
@@ -29,7 +31,19 @@ const sidebarItems = [
 
 export function DashboardSidebar() {
     const pathname = usePathname()
+    const router = useRouter()
     const [user, setUser] = useState<any>(null)
+
+    const handleSignOut = async () => {
+        try {
+            await signOut()
+            toast.success("Signed out successfully")
+            router.refresh()
+            router.push("/")
+        } catch (error: any) {
+            toast.error("Failed to sign out")
+        }
+    }
 
     useEffect(() => {
         const checkUser = async () => {
@@ -114,15 +128,14 @@ export function DashboardSidebar() {
                         <p className="px-2 text-xs font-semibold text-muted-foreground tracking-wider uppercase mb-2">
                             Account
                         </p>
-                        <Link href="/">
-                            <Button
-                                variant="ghost"
-                                className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            >
-                                <LogOut className="h-4 w-4" />
-                                Sign Out
-                            </Button>
-                        </Link>
+                        <Button
+                            variant="ghost"
+                            onClick={handleSignOut}
+                            className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        >
+                            <LogOut className="h-4 w-4" />
+                            Sign Out
+                        </Button>
                     </div>
                 </CardContent>
 

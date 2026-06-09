@@ -65,7 +65,11 @@ export default function ForgotPasswordPage() {
             const result = await checkEmailAndSendResetLink(email, window.location.origin)
             if (result.success) {
                 setSubmitted(true)
-                toast.success("Password reset request sent!")
+                if (result.sandboxNotice) {
+                    toast.warning(result.sandboxNotice, { duration: 15000 })
+                } else {
+                    toast.success("Password reset request sent!")
+                }
             } else {
                 if (result.error === "invalid email") {
                     toast.error("Invalid email. This account does not exist in our database.")

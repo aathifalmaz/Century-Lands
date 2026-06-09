@@ -15,12 +15,12 @@ interface PropertyDetailsTableProps {
 }
 
 export function PropertyDetailsTable({
-    propertyType,
-    listingId,
-    landSize,
-    size,
-    furnishing,
-    ownership,
+    propertyType = "N/A",
+    listingId = "N/A",
+    landSize = "N/A",
+    size = "N/A",
+    furnishing = "N/A",
+    ownership = "N/A",
 }: PropertyDetailsTableProps) {
     const details = [
         { label: "Property Type", value: propertyType },

@@ -12,6 +12,7 @@ export const getS3Client = () => {
             accessKeyId: r2AccessKeyId || 'placeholder',
             secretAccessKey: r2SecretAccessKey || 'placeholder',
         },
+        forcePathStyle: true,
     })
 }
 

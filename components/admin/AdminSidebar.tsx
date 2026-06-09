@@ -13,10 +13,10 @@ import {
     BarChart3,
     Settings,
     FileText,
-    LogOut,
     Shield,
     Mail,
-    Phone
+    Phone,
+    Globe
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { UserNav } from "@/components/UserNav"
@@ -95,7 +95,7 @@ export function AdminSidebar() {
 
     return (
         <div className="space-y-4 py-4 flex flex-col h-full bg-third/30 text-white">
-            <div className="px-3 py-2 flex-1">
+            <div className="px-3 py-2 flex-1 overflow-y-auto no-scrollbar">
                 <Link href="/admin" className="flex items-center pl-3 mb-4">
                     <Shield className="h-8 w-8 mr-4 text-emerald-500" />
                     <h1 className="text-xl font-bold">
@@ -119,41 +119,33 @@ export function AdminSidebar() {
                         </Link>
                     ))}
                 </div>
-                <div className="mt-12 p-4 border border-dashed border-emerald-600/50 rounded-xl bg-white/5">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg">
-                            <span className="text-sm font-bold text-white">N</span>
+                <div className="mt-6 p-3 border border-dashed border-emerald-600/30 rounded-xl bg-white/5">
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="h-6 w-6 rounded-md bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow">
+                            <span className="text-xs font-bold text-white">N</span>
                         </div>
-                        <div>
-                            <h4 className="text-sm font-semibold text-white">Nexora Software Solutions</h4>
-
-                        </div>
+                        <h4 className="text-xs font-semibold text-white">Nexora Support</h4>
                     </div>
-                    <p className="text-xs text-zinc-400 mb-3 leading-relaxed">
-                        Need help or updates? Contact the development team.
-                    </p>
-                    <div className="space-y-2 mt-3">
-                        <div className="flex items-center gap-2 text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer">
-                            <Phone className="h-3 w-3" />
+                    <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 text-[11px] text-zinc-400 hover:text-white transition-colors cursor-pointer">
+                            <Phone className="h-3 w-3 text-emerald-500" />
                             <span>+94 77 123 4567</span>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer">
-                            <Mail className="h-3 w-3" />
+                        <div className="flex items-center gap-2 text-[11px] text-zinc-400 hover:text-white transition-colors cursor-pointer">
+                            <Mail className="h-3 w-3 text-emerald-500" />
                             <span>support@nexora.lk</span>
                         </div>
                     </div>
                 </div>
             </div>
-            <div className="px-3 py-2 border-t border-slate-800">
-                <div className="mb-4">
-                    <UserNav user={user} align="start" side="top" displayUserDetails={true} />
-                </div>
-                <Link href="/dashboard">
+            <div className="px-3 py-2 border-t border-slate-800 space-y-3">
+                <Link href="/">
                     <Button variant="ghost" className="w-full justify-start text-zinc-400 hover:text-white hover:bg-white/10">
-                        <LogOut className="h-5 w-5 mr-3" />
-                        Exit to App
+                        <Globe className="h-5 w-5 mr-3 text-emerald-500" />
+                        Back to Website
                     </Button>
                 </Link>
+                <UserNav user={user} align="start" side="top" displayUserDetails={true} />
             </div>
         </div>
     )

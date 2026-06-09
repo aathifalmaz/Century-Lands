@@ -4,14 +4,17 @@ import { Navbar } from "@/components/Navbar"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import { BackgroundDecor } from "@/components/BackgroundDecor"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { useState, useEffect } from "react"
+import { supabase } from "@/lib/supabase"
 import {
     LayoutDashboard,
     Heart,
     Calendar,
     MessageSquare,
-    User
+    User,
+    Loader2
 } from "lucide-react"
 
 const sidebarItems = [
@@ -28,6 +31,48 @@ export default function DashboardLayout({
     children: React.ReactNode
 }) {
     const pathname = usePathname()
+    const router = useRouter()
+    const [authorized, setAuthorized] = useState(false)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession()
+            const activeUser = session?.user ?? null
+            
+            if (!activeUser) {
+                router.replace("/login")
+            } else {
+                setAuthorized(true)
+                setLoading(false)
+            }
+        }
+        checkAuth()
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!session) {
+                setAuthorized(false)
+                router.replace("/login")
+            } else {
+                setAuthorized(true)
+                setLoading(false)
+            }
+        })
+
+        return () => subscription.unsubscribe()
+    }, [router])
+
+    if (loading) {
+        return (
+            <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
+                <Loader2 className="h-10 w-10 text-secondary animate-spin" />
+            </div>
+        )
+    }
+
+    if (!authorized) {
+        return null
+    }
 
     return (
         <div className="min-h-screen flex flex-col font-sans text-foreground">

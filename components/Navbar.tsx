@@ -202,7 +202,7 @@ export function Navbar({ forceScrolled = false }: NavbarProps) {
                         )}
                         {user ? (
                             <div className="flex-1">
-                                <UserNav user={user} displayUserDetails={true} align="start" side="top" />
+                                <UserNav user={user} displayUserDetails={true} align="start" side="top" themeType="light" />
                             </div>
                         ) : (
                             <Link href="/login" className="flex-1">

@@ -54,14 +54,92 @@ export async function checkEmailAndSendResetLink(email: string, origin: string) 
             return { success: false, error: "invalid email" }
         }
 
-        // Email exists in the database! Send the secure reset link.
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-            redirectTo: `${origin}/reset-password`,
+        // Email exists in the database! Generate secure reset link via Supabase Admin API.
+        const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+            type: 'recovery',
+            email: email.trim(),
+            options: {
+                redirectTo: `${origin}/reset-password`,
+            }
         })
 
-        if (resetError) {
-            console.error("Error sending reset password email:", resetError)
-            return { success: false, error: resetError.message }
+        if (linkError) {
+            console.error("Error generating reset password link:", linkError)
+            return { success: false, error: linkError.message }
+        }
+
+        const actionLink = linkData?.properties?.action_link
+        if (!actionLink) {
+            return { success: false, error: "Failed to generate action link." }
+        }
+
+        // Send the email via Resend API
+        const resendApiKey = process.env.RESEND_API
+        const isSandboxEmail = email.trim().toLowerCase() === 'ashoka.centurylands@gmail.com'
+
+        // Log the link prominently for dev/test in all cases
+        console.log(`
+============================================================
+🔑 [DEV/TEST EMAIL LOG]
+To: ${email}
+Type: Password Reset Link
+Link: ${actionLink}
+============================================================
+        `)
+
+        if (!isSandboxEmail) {
+            console.log(`ℹ️ Recipient is not the verified sandbox email (ashoka.centurylands@gmail.com). Email sending was skipped, but the reset link is logged above for testing.`)
+            return { 
+                success: true, 
+                sandboxNotice: "Resend sandbox active: reset link was printed to server console for testing." 
+            }
+        }
+
+        if (!resendApiKey) {
+            console.error("RESEND_API is missing from environment variables.")
+            return { success: false, error: "Email service is temporarily unavailable." }
+        }
+
+        try {
+            const resendResponse = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${resendApiKey}`
+                },
+                body: JSON.stringify({
+                    from: 'Century Lands <onboarding@resend.dev>',
+                    to: [email.trim()],
+                    subject: 'Reset Your Password - Century Lands',
+                    html: `
+                        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                            <h2 style="color: #0B2545; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Reset Your Password</h2>
+                            <p style="color: #4a5568; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
+                                We received a request to reset the password for your Century Lands account. Click the button below to set a new password:
+                            </p>
+                            <div style="text-align: center; margin-bottom: 24px;">
+                                <a href="${actionLink}" style="display: inline-block; background-color: #C5A028; color: white; padding: 12px 24px; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 6px;">Reset Password</a>
+                            </div>
+                            <p style="color: #718096; font-size: 14px; line-height: 1.5;">
+                                If you didn't request a password reset, you can safely ignore this email.
+                            </p>
+                            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+                            <p style="color: #a0aec0; font-size: 12px; text-align: center;">
+                                &copy; ${new Date().getFullYear()} Century Lands &amp; Homes. All rights reserved.
+                            </p>
+                        </div>
+                    `
+                })
+            })
+
+            if (!resendResponse.ok) {
+                const errorData = await resendResponse.json()
+                console.error("Resend API returned error:", errorData)
+                return { success: false, error: errorData.message || "Failed to send reset email." }
+            }
+        } catch (emailError: any) {
+            console.error("Failed to send reset password email via Resend:", emailError)
+            return { success: false, error: "Failed to send reset email: " + (emailError.message || emailError) }
         }
 
         return { success: true }
@@ -276,5 +354,136 @@ export async function deleteUserAccountAndData(userId: string, email: string) {
         return { success: false, error: error.message || "Failed to delete account." }
     }
 }
+
+/**
+ * Server Action to physically delete a file from R2 bucket.
+ */
+export async function deleteR2FileAction(url: string) {
+    try {
+        const { deleteFromR2 } = await import("@/lib/backend/upload")
+        await deleteFromR2(url)
+        return { success: true }
+    } catch (error: any) {
+        console.error("Error in deleteR2FileAction:", error)
+        return { success: false, error: error.message || "Failed to delete file from R2." }
+    }
+}
+
+/**
+ * Generates a 2FA OTP code and sends it via Resend.
+ */
+export async function sendMfaOtp(email: string, origin: string) {
+    try {
+        if (!email) {
+            return { success: false, error: "Email is required." }
+        }
+
+        const admin = getSupabaseAdmin()
+
+        // Generate the 2FA login OTP using Supabase Admin API
+        const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+            type: 'magiclink',
+            email: email.trim(),
+            options: {
+                redirectTo: `${origin}/login`,
+            }
+        })
+
+        if (linkError) {
+            console.error("Error generating OTP link:", linkError)
+            return { success: false, error: linkError.message }
+        }
+
+        const actionLink = linkData?.properties?.action_link
+        const emailOtp = linkData?.properties?.email_otp
+        if (!emailOtp) {
+            return { success: false, error: "Failed to generate verification code." }
+        }
+
+        // Send the email via Resend API
+        const resendApiKey = process.env.RESEND_API
+        const isSandboxEmail = email.trim().toLowerCase() === 'ashoka.centurylands@gmail.com'
+
+        // Log the OTP code prominently for dev/test in all cases
+        console.log(`
+============================================================
+🔑 [DEV/TEST EMAIL LOG]
+To: ${email}
+Type: 2FA Verification Code
+OTP: ${emailOtp}
+Link: ${actionLink}
+============================================================
+        `)
+
+        if (!isSandboxEmail) {
+            console.log(`ℹ️ Recipient is not the verified sandbox email (ashoka.centurylands@gmail.com). Email sending was skipped, but the OTP code is logged above for testing.`)
+            return { 
+                success: true, 
+                sandboxNotice: `Resend sandbox active. OTP code [${emailOtp}] logged to server console.` 
+            }
+        }
+
+        if (!resendApiKey) {
+            console.error("RESEND_API is missing from environment variables.")
+            return { success: false, error: "Email service is temporarily unavailable." }
+        }
+
+        try {
+            const resendResponse = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${resendApiKey}`
+                },
+                body: JSON.stringify({
+                    from: 'Century Lands <onboarding@resend.dev>',
+                    to: [email.trim()],
+                    subject: 'Your Two-Factor Verification Code - Century Lands',
+                    html: `
+                        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                            <h2 style="color: #0B2545; font-size: 24px; font-weight: bold; margin-bottom: 16px;">Two-Factor Verification</h2>
+                            <p style="color: #4a5568; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
+                                Please use the following verification code to confirm your identity and complete your login:
+                            </p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <div style="display: inline-block; background-color: #f7fafc; border: 2px dashed #cbd5e0; color: #0B2545; padding: 15px 30px; font-size: 32px; font-weight: bold; letter-spacing: 0.1em; border-radius: 8px;">
+                                    ${emailOtp}
+                                </div>
+                            </div>
+                            <p style="color: #4a5568; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
+                                Alternatively, you can click the button below to log in directly:
+                            </p>
+                            <div style="text-align: center; margin-bottom: 24px;">
+                                <a href="${actionLink}" style="display: inline-block; background-color: #C5A028; color: white; padding: 12px 24px; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 6px;">Verify &amp; Log In</a>
+                            </div>
+                            <p style="color: #718096; font-size: 14px; line-height: 1.5;">
+                                This code and link will expire shortly. If you did not request this code, you can safely ignore this email.
+                            </p>
+                            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+                            <p style="color: #a0aec0; font-size: 12px; text-align: center;">
+                                &copy; ${new Date().getFullYear()} Century Lands &amp; Homes. All rights reserved.
+                            </p>
+                        </div>
+                    `
+                })
+            })
+
+            if (!resendResponse.ok) {
+                const errorData = await resendResponse.json()
+                console.error("Resend API returned error:", errorData)
+                return { success: false, error: errorData.message || "Failed to send verification email." }
+            }
+        } catch (emailError: any) {
+            console.error("Failed to send verification email via Resend:", emailError)
+            return { success: false, error: "Failed to send verification email: " + (emailError.message || emailError) }
+        }
+
+        return { success: true }
+    } catch (error: any) {
+        console.error("Error in sendMfaOtp:", error)
+        return { success: false, error: error.message || "Failed to send verification code." }
+    }
+}
+
 
 

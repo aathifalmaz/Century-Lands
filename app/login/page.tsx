@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Eye, EyeOff, ChevronLeft, ChevronRight, ArrowLeft, Phone, User } from "lucide-react"
 import Link from "next/link"
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BackgroundDecor } from "@/components/BackgroundDecor"
 import { signInWithEmail, signUpWithEmail, signInWithGoogle } from "@/lib/backend/auth"
+import { sendMfaOtp } from "@/lib/actions/auth"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
@@ -79,52 +80,73 @@ export default function LoginPage() {
     /* ── testimonial state ── */
     const [activeTestimonial, setActiveTestimonial] = useState(0)
 
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search)
+            const error = params.get("error")
+            if (error) {
+                toast.error(decodeURIComponent(error))
+                // Clear the error parameter from URL
+                const newUrl = window.location.pathname
+                window.history.replaceState({}, document.title, newUrl)
+            }
+        }
+    }, [])
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
         console.log("🚀 Login attempt started for:", email)
         setLoading(true)
         try {
-            const data = await signInWithEmail(email, password)
-            console.log("✅ Login password check success:", data.user?.id)
+            const { data, error } = await signInWithEmail(email, password)
+            if (error) {
+                console.warn("❌ Login error details:", error.message || error)
+
+                // Map common Supabase error messages to more user-friendly ones
+                let errorMessage = error.message || "Failed to login"
+
+                if (errorMessage === "Invalid login credentials") {
+                    errorMessage = "Invalid email or password. Please try again."
+                } else if (errorMessage.toLowerCase().includes("database error")) {
+                    errorMessage = "Database connection error. Please try again later."
+                }
+
+                toast.error(errorMessage)
+                setLoading(false)
+                return
+            }
+
+            console.log("✅ Login password check success:", data?.user?.id)
 
             // Intercept if Two-Factor Authentication is enabled
-            if (data.user?.user_metadata?.two_factor_enabled) {
+            if (data?.user?.user_metadata?.two_factor_enabled) {
                 console.log("🔒 2FA is active, sending OTP...")
                 // Sign out instantly so client session is not persisted until OTP is confirmed
                 await supabase.auth.signOut()
 
                 // Request email OTP
-                const { error: otpError } = await supabase.auth.signInWithOtp({
-                    email,
-                    options: {
-                        shouldCreateUser: false
-                    }
-                })
+                const res = await sendMfaOtp(email, window.location.origin)
 
-                if (otpError) {
-                    throw otpError
+                if (!res.success || res.error) {
+                    toast.error(res.error || "Failed to send OTP code")
+                    setLoading(false)
+                    return
                 }
 
                 setOtpEmail(email)
                 setRequireOtp(true)
-                toast.success("Two-Factor Authentication: A verification code has been sent to your email.")
+                if (res.sandboxNotice) {
+                    toast.warning(res.sandboxNotice, { duration: 10000 })
+                } else {
+                    toast.success("Two-Factor Authentication: A verification code has been sent to your email.")
+                }
             } else {
                 toast.success("Login successful!")
                 router.push("/")
             }
         } catch (error: any) {
-            console.error("❌ Login error details:", error)
-
-            // Map common Supabase error messages to more user-friendly ones
-            let errorMessage = error.message || "Failed to login"
-
-            if (errorMessage === "Invalid login credentials") {
-                errorMessage = "Invalid email or password. Please try again."
-            } else if (errorMessage.toLowerCase().includes("database error")) {
-                errorMessage = "Database connection error. Please try again later."
-            }
-
-            toast.error(errorMessage)
+            console.warn("❌ Login unexpected error:", error.message || error)
+            toast.error(error.message || "Failed to login")
         } finally {
             setLoading(false)
             console.log("🏁 Login attempt finished")
@@ -148,7 +170,10 @@ export default function LoginPage() {
             })
 
             if (error) {
-                throw error
+                console.warn("❌ OTP Verification error details:", error.message || error)
+                toast.error(error.message || "Invalid or expired verification code.")
+                setOtpLoading(false)
+                return
             }
 
             console.log("✅ OTP verification successful:", data.user?.id)
@@ -156,7 +181,7 @@ export default function LoginPage() {
             toast.success("Two-Factor Authentication verified! Login successful.")
             router.push("/")
         } catch (error: any) {
-            console.error("❌ OTP Verification error:", error)
+            console.warn("❌ OTP Verification unexpected error:", error.message || error)
             toast.error(error.message || "Invalid or expired verification code.")
         } finally {
             setOtpLoading(false)
@@ -216,14 +241,21 @@ export default function LoginPage() {
 
         setLoading(true)
         try {
-            await signUpWithEmail(signupEmail, signupPassword, {
+            const { data, error } = await signUpWithEmail(signupEmail, signupPassword, {
                 full_name: signupName,
                 phone: signupPhone
             })
+            if (error) {
+                console.warn("❌ Signup error details:", error.message || error)
+                toast.error(error.message || "Failed to create account")
+                setLoading(false)
+                return
+            }
             
             toast.success("Please verify your account through the link sent to your email to complete registration.")
             setActiveTab("login")
         } catch (error: any) {
+            console.warn("❌ Signup unexpected error:", error.message || error)
             toast.error(error.message || "Failed to create account")
         } finally {
             setLoading(false)

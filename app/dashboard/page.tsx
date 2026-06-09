@@ -1,35 +1,156 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { mockDashboard } from "@/data/mockDashboard"
-import { mockUser } from "@/data/mockUser"
-import { Calendar, Heart, MessageSquare, Eye, Shield } from "lucide-react"
+import { Calendar, Heart, MessageSquare, Eye, Shield, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
-
-/* Map icon strings to components */
-const iconMap: Record<string, any> = {
-    Heart,
-    Calendar,
-    MessageSquare,
-    Eye,
-}
+import { toast } from "sonner"
 
 export default function DashboardOverview() {
     const [user, setUser] = useState<any>(null)
+    const [stats, setStats] = useState({
+        savedCount: 0,
+        appointmentsCount: 0,
+        inquiriesCount: 0
+    })
+    const [appointments, setAppointments] = useState<any[]>([])
+    const [activities, setActivities] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const checkUser = async () => {
+        const fetchDashboardData = async () => {
             const { data: { session } } = await supabase.auth.getSession()
-            setUser(session?.user ?? null)
+            const currentUser = session?.user ?? null
+            setUser(currentUser)
+
+            if (currentUser) {
+                try {
+                    setLoading(true)
+
+                    // 1. Fetch saved properties count
+                    const { data: savedProps, count: savedCount } = await supabase
+                        .from('saved_properties')
+                        .select('*, properties(title)', { count: 'exact' })
+                        .eq('user_id', currentUser.id)
+
+                    // 2. Fetch appointments
+                    const { data: appts } = await supabase
+                        .from('appointments')
+                        .select('*')
+                        .eq('email', currentUser.email)
+                        .order('appointment_date', { ascending: true })
+
+                    // 3. Fetch inquiries
+                    const { data: inqs } = await supabase
+                        .from('inquiries')
+                        .select('*')
+                        .eq('email', currentUser.email)
+                        .order('created_at', { ascending: false })
+
+                    setStats({
+                        savedCount: savedCount || 0,
+                        appointmentsCount: appts?.length || 0,
+                        inquiriesCount: inqs?.length || 0
+                    })
+
+                    if (appts) {
+                        setAppointments(appts.slice(0, 3)) // Limit to top 3 upcoming
+                    }
+
+                    // 4. Construct recent activities dynamically from real actions
+                    const activityList: any[] = []
+
+                    if (savedProps) {
+                        savedProps.forEach((item: any) => {
+                            activityList.push({
+                                id: `saved-${item.id}`,
+                                type: 'saved',
+                                message: `You saved '${item.properties?.title || 'a property'}'`,
+                                date: new Date(item.created_at),
+                            })
+                        })
+                    }
+
+                    if (appts) {
+                        appts.forEach((item: any) => {
+                            activityList.push({
+                                id: `appt-${item.id}`,
+                                type: 'appointment',
+                                message: `Appointment booked: '${item.property_title || 'a property'}' (${item.status || 'Pending'})`,
+                                date: new Date(item.created_at),
+                            })
+                        })
+                    }
+
+                    if (inqs) {
+                        inqs.forEach((item: any) => {
+                            activityList.push({
+                                id: `inq-${item.id}`,
+                                type: 'inquiry',
+                                message: item.reply 
+                                    ? `Agent replied to inquiry on '${item.property_title || 'property'}'` 
+                                    : `You sent an inquiry about '${item.property_title || 'a property'}'`,
+                                date: new Date(item.created_at),
+                            })
+                        })
+                    }
+
+                    // Sort activity list by date descending
+                    activityList.sort((a, b) => b.date.getTime() - a.date.getTime())
+
+                    // Format dates human-readably
+                    const formattedActivities = activityList.slice(0, 5).map(act => {
+                        const diffMs = new Date().getTime() - act.date.getTime()
+                        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60))
+                        const diffDays = Math.floor(diffHrs / 24)
+                        
+                        let dateStr = ''
+                        if (diffHrs < 1) {
+                            dateStr = 'Just now'
+                        } else if (diffHrs < 24) {
+                            dateStr = `${diffHrs} hour${diffHrs > 1 ? 's' : ''} ago`
+                        } else if (diffDays < 7) {
+                            dateStr = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+                        } else {
+                            dateStr = act.date.toLocaleDateString()
+                        }
+
+                        return {
+                            id: act.id,
+                            type: act.type,
+                            message: act.message,
+                            date: dateStr
+                        }
+                    })
+
+                    setActivities(formattedActivities)
+
+                } catch (err: any) {
+                    console.error("Error loading dashboard data:", err)
+                    toast.error("Failed to load dashboard data: " + (err.message || "Unknown error"))
+                } finally {
+                    setLoading(false)
+                }
+            } else {
+                setLoading(false)
+            }
         }
-        checkUser()
+
+        fetchDashboardData()
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null)
+            if (session) {
+                fetchDashboardData()
+            } else {
+                setUser(null)
+                setStats({ savedCount: 0, appointmentsCount: 0, inquiriesCount: 0 })
+                setAppointments([])
+                setActivities([])
+                setLoading(false)
+            }
         })
 
         return () => {
@@ -39,25 +160,40 @@ export default function DashboardOverview() {
 
     const isAdmin = user?.user_metadata?.role?.toLowerCase() === "admin"
 
+    if (loading) {
+        return (
+            <div className="flex h-[400px] items-center justify-center">
+                <Loader2 className="h-10 w-10 text-primary animate-spin" />
+            </div>
+        )
+    }
+
+    const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User"
+    const userInitials = userName.charAt(0).toUpperCase()
+
+    const statsCards = [
+        { label: "Saved Properties", value: stats.savedCount, icon: Heart, href: "/dashboard/saved" },
+        { label: "Upcoming Appointments", value: stats.appointmentsCount, icon: Calendar, href: "/dashboard/appointments" },
+        { label: "Inquiries Sent", value: stats.inquiriesCount, icon: MessageSquare, href: "/dashboard/inquiries" }
+    ]
+
     return (
         <div className="space-y-8">
             {/* Welcome Section */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white/40 backdrop-blur-md p-6 rounded-2xl border border-border/50 shadow-sm">
                 <div className="flex items-center gap-4">
-                    {/* Avatar with Tri-color Ring (Navy, Green, Gold) */}
                     <div className="rounded-full p-[3px] bg-[conic-gradient(from_0deg,hsl(var(--primary)),hsl(var(--secondary)),hsl(var(--accent)),hsl(var(--primary)))]">
                         <Avatar className="h-16 w-16 border-2 border-white">
-                            <AvatarImage src={user?.user_metadata?.avatar_url || mockUser.avatar} alt={user?.user_metadata?.full_name || mockUser.name} />
-                            <AvatarFallback>{(user?.user_metadata?.full_name || mockUser.name).charAt(0)}</AvatarFallback>
+                            <AvatarImage src={user?.user_metadata?.avatar_url || ""} alt={userName} />
+                            <AvatarFallback className="bg-primary text-white font-bold">{userInitials}</AvatarFallback>
                         </Avatar>
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold text-third">Hello, {(user?.user_metadata?.full_name || mockUser.name).split(" ")[0]}!</h1>
+                        <h1 className="text-3xl font-bold text-third">Hello, {userName.split(" ")[0]}!</h1>
                         <p className="text-muted-foreground mt-1 text-sm sm:text-base">Here&apos;s a summary of your activity with Century Lands.</p>
                     </div>
                 </div>
                 
-                {/* Admin button for fast access */}
                 {isAdmin && (
                     <Link href="/admin" className="shrink-0">
                         <Button className="w-full sm:w-auto h-11 px-6 font-bold bg-emerald-600 text-white shadow-md hover:bg-emerald-700 hover:shadow-lg active:scale-[0.98] transition-all duration-300 rounded-xl flex items-center justify-center gap-2 group">
@@ -69,9 +205,9 @@ export default function DashboardOverview() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {mockDashboard.stats.map((stat) => {
-                    const Icon = iconMap[stat.icon] || Eye
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {statsCards.map((stat) => {
+                    const Icon = stat.icon
                     return (
                         <Link key={stat.label} href={stat.href}>
                             <Card className="hover:shadow-md transition-shadow cursor-pointer border-border/60">
@@ -101,8 +237,8 @@ export default function DashboardOverview() {
                     </div>
 
                     <div className="space-y-4">
-                        {mockDashboard.upcomingAppointments.length > 0 ? (
-                            mockDashboard.upcomingAppointments.map((apt) => (
+                        {appointments.length > 0 ? (
+                            appointments.map((apt) => (
                                 <Card key={apt.id} className="border-border/60">
                                     <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                         <div className="flex items-start gap-4">
@@ -110,14 +246,22 @@ export default function DashboardOverview() {
                                                 <Calendar className="h-6 w-6 text-secondary" />
                                             </div>
                                             <div>
-                                                <h3 className="font-semibold text-primary">{apt.property}</h3>
-                                                <p className="text-sm text-muted-foreground">with {apt.agent}</p>
+                                                <h3 className="font-semibold text-primary">{apt.property_title || "Untitled Property"}</h3>
+                                                <p className="text-sm text-muted-foreground">with {apt.agent_name || "Assigned Agent"}</p>
                                             </div>
                                         </div>
                                         <div className="text-right flex flex-col items-end gap-1">
-                                            <span className="text-sm font-medium text-primary">{apt.date} • {apt.time}</span>
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                {apt.status}
+                                            <span className="text-sm font-medium text-primary">
+                                                {apt.appointment_date} • {apt.appointment_time}
+                                            </span>
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                apt.status === "Confirmed" 
+                                                    ? "bg-green-100 text-green-800" 
+                                                    : apt.status === "Cancelled"
+                                                    ? "bg-red-100 text-red-800"
+                                                    : "bg-yellow-100 text-yellow-800"
+                                            }`}>
+                                                {apt.status || "Pending"}
                                             </span>
                                         </div>
                                     </CardContent>
@@ -135,12 +279,18 @@ export default function DashboardOverview() {
                     <Card className="border-border/60">
                         <CardContent className="p-0">
                             <div className="divide-y divide-border/60">
-                                {mockDashboard.recentActivity.map((activity) => (
-                                    <div key={activity.id} className="p-4 hover:bg-gray-50 transition-colors">
-                                        <p className="text-sm text-gray-800 font-medium mb-1">{activity.message}</p>
-                                        <p className="text-xs text-muted-foreground">{activity.date}</p>
+                                {activities.length > 0 ? (
+                                    activities.map((activity) => (
+                                        <div key={activity.id} className="p-4 hover:bg-gray-50 transition-colors">
+                                            <p className="text-sm text-gray-800 font-medium mb-1">{activity.message}</p>
+                                            <p className="text-xs text-muted-foreground">{activity.date}</p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="p-6 text-center text-sm text-muted-foreground">
+                                        No recent activity.
                                     </div>
-                                ))}
+                                )}
                             </div>
                         </CardContent>
                     </Card>

@@ -27,9 +27,9 @@ export default function SavedPropertiesPage() {
                     const data = await getSavedProperties(loggedInUser.id)
                     setSavedProperties(data)
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error loading saved properties:", error)
-                toast.error("Failed to load saved properties.")
+                toast.error("Failed to load saved properties: " + (error.message || "Unknown error"))
             } finally {
                 setLoading(false)
             }
@@ -44,8 +44,9 @@ export default function SavedPropertiesPage() {
             await unsaveProperty(user.id, propertyId)
             setSavedProperties(prev => prev.filter(p => p.id !== propertyId))
             toast.success("Removed from favorites successfully!")
-        } catch (error) {
-            toast.error("Failed to remove property.")
+        } catch (error: any) {
+            console.error("Remove saved property error:", error)
+            toast.error("Failed to remove property: " + (error.message || "Unknown error"))
         }
     }
 

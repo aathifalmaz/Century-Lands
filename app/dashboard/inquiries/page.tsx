@@ -36,9 +36,9 @@ export default function InquiriesPage() {
                 const data = await getInquiriesByEmail(loggedInUser.email)
                 setInquiries(data)
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error loading inquiries:", error)
-            toast.error("Failed to load inquiries.")
+            toast.error("Failed to load inquiries: " + (error.message || "Unknown error"))
         } finally {
             setLoading(false)
         }
@@ -58,8 +58,9 @@ export default function InquiriesPage() {
             setReplyText("")
             setActiveReplyId(null)
             fetchUserAndInquiries() // reload list
-        } catch (error) {
-            toast.error("Failed to send reply.")
+        } catch (error: any) {
+            console.error("Send inquiry reply error:", error)
+            toast.error("Failed to send reply: " + (error.message || "Unknown error"))
         } finally {
             setSubmittingReply(false)
         }
@@ -120,8 +121,8 @@ export default function InquiriesPage() {
                             <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 relative">
                                 <div className="flex gap-3">
                                     <Avatar className="h-9 w-9 border border-border shadow-sm">
-                                        <AvatarImage src={mockUser.avatar} />
-                                        <AvatarFallback>ME</AvatarFallback>
+                                        <AvatarImage src={user?.user_metadata?.avatar_url || mockUser.avatar} />
+                                        <AvatarFallback>{user?.user_metadata?.full_name?.substring(0, 2).toUpperCase() || "ME"}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between mb-1">

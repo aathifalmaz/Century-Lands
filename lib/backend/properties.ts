@@ -29,7 +29,8 @@ export async function getProperties() {
         .from('properties')
         .select(`
             *,
-            property_images (url)
+            property_images (url),
+            property_amenities (amenity)
         `)
         .order('created_at', { ascending: false })
 
@@ -38,6 +39,7 @@ export async function getProperties() {
     return (data || []).map(p => ({
         ...p,
         images: p.property_images?.map((img: any) => img.url) || [],
+        amenities: p.property_amenities?.map((a: any) => a.amenity) || [],
         propertyType: p.property_type // for camelCase compatibility
     }))
 }
@@ -153,8 +155,8 @@ export async function getPropertyById(id: string) {
 
     return {
         ...data,
-        images: data.property_images.map((img: any) => img.url),
-        amenities: data.property_amenities.map((a: any) => a.amenity),
+        images: data.property_images?.map((img: any) => img.url) || [],
+        amenities: data.property_amenities?.map((a: any) => a.amenity) || [],
         agent: data.agents,
         pricePerSqft: data.size && !isNaN(parseFloat(data.size)) && data.price
             ? (parseFloat(data.price.replace(/[^0-9.]/g, '')) / parseFloat(data.size)).toFixed(0)
@@ -243,6 +245,24 @@ export async function updateProperty(id: string, property: any, images: string[]
     if (pError) throw pError
 
     // 2. Sync images
+    try {
+        // Fetch old images to check what needs to be deleted from R2
+        const { data: oldImgs } = await supabase
+            .from('property_images')
+            .select('url')
+            .eq('property_id', parseInt(id))
+
+        if (oldImgs && oldImgs.length > 0) {
+            const toDelete = oldImgs.filter(oldImg => !images.includes(oldImg.url))
+            if (toDelete.length > 0) {
+                const { deleteFromR2 } = await import('./upload')
+                await Promise.all(toDelete.map(img => deleteFromR2(img.url)))
+            }
+        }
+    } catch (err) {
+        console.error("Error syncing property images in R2 during update:", err)
+    }
+
     // Delete old
     const { error: dError } = await supabase
         .from('property_images')
@@ -273,6 +293,21 @@ export async function updateProperty(id: string, property: any, images: string[]
 }
 
 export async function deleteProperty(id: string) {
+    // Fetch associated property images to delete from R2
+    try {
+        const { data: imgs } = await supabase
+            .from('property_images')
+            .select('url')
+            .eq('property_id', parseInt(id))
+            
+        if (imgs && imgs.length > 0) {
+            const { deleteFromR2 } = await import('./upload')
+            await Promise.all(imgs.map(img => deleteFromR2(img.url)))
+        }
+    } catch (err) {
+        console.error("Error deleting property images from R2:", err)
+    }
+
     // Before deleting property, delete any associated sales records
     try {
         await supabase

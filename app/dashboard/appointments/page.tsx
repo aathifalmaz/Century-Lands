@@ -53,9 +53,9 @@ export default function AppointmentsPage() {
                 const data = await getAppointmentsByEmail(loggedInUser.email)
                 setAppointments(data)
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error loading appointments:", error)
-            toast.error("Failed to load appointments.")
+            toast.error("Failed to load appointments: " + (error.message || "Unknown error"))
         } finally {
             setLoading(false)
         }
@@ -72,8 +72,9 @@ export default function AppointmentsPage() {
                 prev.map(apt => (apt.id === id ? { ...apt, status: "Cancelled" } : apt))
             )
             toast.success("Appointment cancelled successfully.")
-        } catch (error) {
-            toast.error("Failed to cancel appointment.")
+        } catch (error: any) {
+            console.error("Cancel appointment error:", error)
+            toast.error("Failed to cancel appointment: " + (error.message || "Unknown error"))
         }
     }
 
@@ -159,8 +160,6 @@ export default function AppointmentsPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="rounded-xl">
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem onClick={() => toast.info(`Contacting agent via: ${apt.agent_phone || "support@centurylands.com"}`)}>Contact Agent</DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
                                                     <DropdownMenuItem 
                                                         onClick={() => handleCancel(apt.id)}
                                                         className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"

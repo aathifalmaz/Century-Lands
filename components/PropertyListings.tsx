@@ -25,7 +25,7 @@ export function PropertyListings({ properties }: PropertyListingsProps) {
     return (
         <div>
             {/* Page Header */}
-            <section className="pt-12 pb-4 border-b border-border/40">
+            <section className="pt-0 pb-4 border-b border-border/40">
                 <h1 className="text-3xl md:text-4xl font-bold text-third">
                     Browse Properties
                 </h1>

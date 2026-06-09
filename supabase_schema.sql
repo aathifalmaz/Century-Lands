@@ -143,3 +143,89 @@ CREATE TABLE IF NOT EXISTS user_documents (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- =========================================================================
+-- ROW LEVEL SECURITY (RLS) & POLICIES SETUP
+-- Execute the following in the Supabase SQL Editor to resolve access issues.
+-- =========================================================================
+
+-- Enable RLS on all tables
+ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE property_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE property_amenities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nearby_places ENABLE ROW LEVEL SECURITY;
+ALTER TABLE saved_properties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sales_records ENABLE ROW LEVEL SECURITY;
+
+-- 1. Policies for Properties (Public Read, Admin Write)
+CREATE POLICY "Allow public read access on properties" ON properties
+    FOR SELECT TO public USING (true);
+CREATE POLICY "Allow admin write access on properties" ON properties
+    FOR ALL TO authenticated
+    USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin')
+    WITH CHECK ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin');
+
+-- 2. Policies for Property Images (Public Read, Admin Write)
+CREATE POLICY "Allow public read access on property_images" ON property_images
+    FOR SELECT TO public USING (true);
+CREATE POLICY "Allow admin write access on property_images" ON property_images
+    FOR ALL TO authenticated
+    USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin')
+    WITH CHECK ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin');
+
+-- 3. Policies for Property Amenities (Public Read, Admin Write)
+CREATE POLICY "Allow public read access on property_amenities" ON property_amenities
+    FOR SELECT TO public USING (true);
+CREATE POLICY "Allow admin write access on property_amenities" ON property_amenities
+    FOR ALL TO authenticated
+    USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin')
+    WITH CHECK ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin');
+
+-- 4. Policies for Nearby Places (Public Read, Admin Write)
+CREATE POLICY "Allow public read access on nearby_places" ON nearby_places
+    FOR SELECT TO public USING (true);
+CREATE POLICY "Allow admin write access on nearby_places" ON nearby_places
+    FOR ALL TO authenticated
+    USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin')
+    WITH CHECK ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin');
+
+-- 5. Policies for Saved Properties (Users manage their own)
+CREATE POLICY "Allow users to manage their own saved properties" ON saved_properties
+    FOR ALL TO authenticated
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+
+-- 6. Policies for User Verification Documents (Users manage their own, Admin can read/update)
+CREATE POLICY "Allow users to manage their own documents" ON user_documents
+    FOR ALL TO authenticated
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Allow admins to read and update all documents" ON user_documents
+    FOR ALL TO authenticated
+    USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin')
+    WITH CHECK ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin');
+
+-- 7. Policies for Appointments (Public Insert, Admin Full Access)
+CREATE POLICY "Allow public inserts on appointments" ON appointments
+    FOR INSERT TO public WITH CHECK (true);
+CREATE POLICY "Allow admins to manage appointments" ON appointments
+    FOR ALL TO authenticated
+    USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin')
+    WITH CHECK ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin');
+
+-- 8. Policies for Inquiries (Public Insert, Admin Full Access)
+CREATE POLICY "Allow public inserts on inquiries" ON inquiries
+    FOR INSERT TO public WITH CHECK (true);
+CREATE POLICY "Allow admins to manage inquiries" ON inquiries
+    FOR ALL TO authenticated
+    USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin')
+    WITH CHECK ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin');
+
+-- 9. Policies for Sales Records (Admin Only)
+CREATE POLICY "Allow admins to manage sales records" ON sales_records
+    FOR ALL TO authenticated
+    USING ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin')
+    WITH CHECK ((auth.jwt() -> 'user_metadata' ->> 'role') = 'Admin');
+

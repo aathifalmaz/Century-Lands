@@ -7,7 +7,6 @@ import { PropertyDescription } from "@/components/property-detail/PropertyDescri
 import { PropertyDetailsTable } from "@/components/property-detail/PropertyDetailsTable"
 import { AmenitiesGrid } from "@/components/property-detail/AmenitiesGrid"
 import { AgentCard } from "@/components/property-detail/AgentCard"
-import { BookingDialog } from "@/components/property-detail/BookingDialog"
 import { Footer } from "@/components/Footer"
 import { Separator } from "@/components/ui/separator"
 import { notFound } from "next/navigation"
@@ -45,9 +44,12 @@ export default async function PropertyDetailPage({ params }: PropertyPageProps) 
         <div className="min-h-screen bg-background">
             <Navbar forceScrolled />
 
-            <main className="container mx-auto px-6 lg:px-20 py-10 space-y-10">
+            <main className="container mx-auto px-6 lg:px-20 pt-24 lg:pt-28 pb-10 space-y-10">
                 {/* 1️⃣ Image Gallery */}
-                <PropertyGallery images={property.images} title={property.title} />
+                <PropertyGallery 
+                    images={property.images && property.images.length > 0 ? property.images : ["/mock/1.jpg"]} 
+                    title={property.title} 
+                />
 
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12 items-start">
                     {/* Left Column — Content */}
@@ -100,22 +102,16 @@ export default async function PropertyDetailPage({ params }: PropertyPageProps) 
 
                     {/* Right Column — Actions & Agent */}
                     <aside className="space-y-6 sticky top-24">
-                        {/* 7️⃣ Property Actions (Save, Share, Inquire) */}
+                        {/* 7️⃣ Property Actions (Save, Share, Inquire, Book) */}
                         <PropertyActions
                             propertyId={property.id}
+                            propertyTitle={property.title}
                             phone={property.agent?.phone || ""}
                             whatsapp={property.agent?.phone || ""}
-                            onBookAppointment={() => { }} // Managed by BookingDialog via state in client components if needed
                         />
 
                         {/* 8️⃣ Agent Information Card */}
                         <AgentCard agent={property.agent} />
-
-                        {/* 9️⃣ Booking Dialog Button */}
-                        <BookingDialog
-                            propertyId={property.id}
-                            propertyTitle={property.title}
-                        />
                     </aside>
                 </div>
 

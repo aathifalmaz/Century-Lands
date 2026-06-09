@@ -14,11 +14,11 @@ interface PropertyHeaderProps {
 
 export function PropertyHeader({
     title,
-    tagline,
+    tagline = "",
     location,
-    address,
+    address = "N/A",
     price,
-    pricePerSqft,
+    pricePerSqft = "0",
     status,
 }: PropertyHeaderProps) {
     return (

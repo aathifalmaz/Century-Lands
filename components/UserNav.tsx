@@ -24,9 +24,10 @@ interface UserNavProps {
     side?: "top" | "right" | "bottom" | "left"
     displayUserDetails?: boolean
     user?: any
+    themeType?: "light" | "dark"
 }
 
-export function UserNav({ align = "end", side = "bottom", displayUserDetails = false, user }: UserNavProps) {
+export function UserNav({ align = "end", side = "bottom", displayUserDetails = false, user, themeType = "dark" }: UserNavProps) {
     const router = useRouter()
 
     if (!user) return null
@@ -60,7 +61,12 @@ export function UserNav({ align = "end", side = "bottom", displayUserDetails = f
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className={cn(
                     "relative shrink-0",
-                    displayUserDetails ? "w-full justify-start h-auto p-2 gap-3 rounded-xl hover:bg-white/10" : "h-10 w-10 rounded-full"
+                    displayUserDetails 
+                        ? cn(
+                            "w-full justify-start h-auto p-2 gap-3 rounded-xl",
+                            themeType === "light" ? "hover:bg-slate-100" : "hover:bg-white/10"
+                          )
+                        : "h-10 w-10 rounded-full"
                 )}>
                     {displayUserDetails ? (
                         <div className="h-10 w-10 rounded-full p-[3px] bg-[conic-gradient(from_0deg,hsl(var(--primary)),hsl(var(--secondary)),hsl(var(--accent)),hsl(var(--primary)))] shrink-0">
@@ -82,8 +88,8 @@ export function UserNav({ align = "end", side = "bottom", displayUserDetails = f
 
                     {displayUserDetails && (
                         <div className="flex flex-col items-start text-left">
-                            <span className="text-sm font-medium text-white">{userData.name}</span>
-                            <span className="text-xs text-zinc-400">{userData.email}</span>
+                            <span className={cn("text-sm font-medium", themeType === "light" ? "text-slate-800" : "text-white")}>{userData.name}</span>
+                            <span className={cn("text-xs", themeType === "light" ? "text-slate-500" : "text-zinc-400")}>{userData.email}</span>
                         </div>
                     )}
                 </Button>
@@ -108,7 +114,7 @@ export function UserNav({ align = "end", side = "bottom", displayUserDetails = f
                         </DropdownMenuItem>
                     )}
                     <DropdownMenuItem asChild>
-                        <Link href="/profile" className="w-full cursor-pointer text-[#0B2545] font-semibold">
+                        <Link href="/dashboard" className="w-full cursor-pointer text-[#0B2545] font-semibold">
                             <User className="mr-2 h-4 w-4" />
                             <span>Profile</span>
                         </Link>

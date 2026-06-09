@@ -40,7 +40,7 @@ interface AmenitiesGridProps {
     amenities: string[]
 }
 
-export function AmenitiesGrid({ amenities }: AmenitiesGridProps) {
+export function AmenitiesGrid({ amenities = [] }: AmenitiesGridProps) {
     return (
         <div className="space-y-3">
             <h2 className="text-xl font-bold text-foreground">Amenities</h2>

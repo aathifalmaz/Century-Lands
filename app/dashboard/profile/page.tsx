@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Camera, Lock, Bell, FileText, AlertTriangle, ShieldCheck, Loader2, Trash2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { toast } from "sonner"
-import { deleteUserAccountAndData } from "@/lib/actions/auth"
+import { deleteUserAccountAndData, deleteR2FileAction } from "@/lib/actions/auth"
 
 export default function ProfilePage() {
     const [user, setUser] = useState<any>(null)
@@ -52,8 +52,9 @@ export default function ProfilePage() {
                 .order("created_at", { ascending: false })
             if (error) throw error
             setDocuments(data || [])
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error loading documents:", err)
+            toast.error("Failed to load documents: " + (err.message || "Unknown error"))
         } finally {
             setLoadingDocs(false)
         }
@@ -77,8 +78,9 @@ export default function ProfilePage() {
                     setTwoFactorEnabled(loggedInUser.user_metadata?.two_factor_enabled || false)
                     fetchDocuments(loggedInUser.id)
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error loading user profile:", error)
+                toast.error("Failed to load user profile: " + (error.message || "Unknown error"))
             } finally {
                 setLoading(false)
             }
@@ -93,16 +95,37 @@ export default function ProfilePage() {
 
     const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            setUploading(true)
             const file = e.target.files[0]
+
+            // Validation: File size (limit to 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error("Image file size must be less than 5MB.")
+                return
+            }
+
+            // Validation: File type
+            if (!file.type.startsWith("image/")) {
+                toast.error("Only image files are allowed.")
+                return
+            }
+
+            setUploading(true)
             try {
+                // Delete old avatar from R2 if it exists
+                if (avatarUrl) {
+                    await deleteR2FileAction(avatarUrl)
+                }
+
                 const formData = new FormData()
                 formData.append("file", file)
                 const res = await fetch("/api/upload", {
                     method: "POST",
                     body: formData
                 })
-                if (!res.ok) throw new Error("Upload failed")
+                if (!res.ok) {
+                    const errText = await res.text()
+                    throw new Error(errText || "Upload failed")
+                }
                 const data = await res.json()
                 const newAvatarUrl = data.url
 
@@ -119,7 +142,7 @@ export default function ProfilePage() {
                 }
             } catch (err: any) {
                 console.error("Avatar upload failed", err)
-                toast.error("Failed to upload avatar.")
+                toast.error("Failed to upload avatar: " + (err.message || "Unknown error"))
             } finally {
                 setUploading(false)
             }
@@ -129,33 +152,61 @@ export default function ProfilePage() {
     const handleRemoveAvatar = async () => {
         setUploading(true)
         try {
+            // Delete from R2 if it exists
+            if (avatarUrl) {
+                await deleteR2FileAction(avatarUrl)
+            }
+
             const { data: updateData, error: updateError } = await supabase.auth.updateUser({
                 data: { avatar_url: "" }
             })
             if (updateError) throw updateError
 
             setAvatarUrl("")
-            toast.success("Avatar removed!")
+            toast.success("Avatar removed successfully!")
             if (updateData?.user) {
                 setUser(updateData.user)
             }
         } catch (err: any) {
-            toast.error("Failed to remove avatar.")
+            console.error("Failed to remove avatar:", err)
+            toast.error("Failed to remove avatar: " + (err.message || "Unknown error"))
         } finally {
             setUploading(false)
         }
     }
 
     const handleSaveChanges = async () => {
+        // Validation: Fields
+        if (!fullName.trim()) {
+            toast.error("Full Name is required.")
+            return
+        }
+
+        if (!email.trim()) {
+            toast.error("Email Address is required.")
+            return
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(email.trim())) {
+            toast.error("Please enter a valid email address.")
+            return
+        }
+
+        if (phone && !/^\+?[0-9\s\-()]{7,20}$/.test(phone.trim())) {
+            toast.error("Please enter a valid phone number (7-20 digits).")
+            return
+        }
+
         setSaving(true)
         try {
             const { data, error } = await supabase.auth.updateUser({
                 email: email !== user?.email ? email : undefined,
                 data: {
-                    full_name: fullName,
-                    phone: phone,
-                    address: address,
-                    bio: bio
+                    full_name: fullName.trim(),
+                    phone: phone.trim(),
+                    address: address.trim(),
+                    bio: bio.trim()
                 }
             })
 
@@ -164,7 +215,7 @@ export default function ProfilePage() {
             toast.success("Profile details updated successfully!")
             setUser(data.user)
         } catch (error: any) {
-            toast.error("Failed to update profile details: " + error.message)
+            toast.error("Failed to update profile details: " + (error.message || "Unknown error"))
         } finally {
             setSaving(false)
         }
@@ -194,9 +245,13 @@ export default function ProfilePage() {
 
             toast.success("Account successfully deleted.")
             await supabase.auth.signOut()
+            if (typeof window !== "undefined") {
+                sessionStorage.removeItem("2fa_verified")
+            }
             window.location.href = "/"
         } catch (error: any) {
-            toast.error("Failed to delete account: " + error.message)
+            console.error("Account deletion failed:", error)
+            toast.error("Failed to delete account: " + (error.message || "Unknown error"))
         } finally {
             setSaving(false)
         }
@@ -205,6 +260,11 @@ export default function ProfilePage() {
     const handleUpdatePassword = async () => {
         if (!currentPassword || !newPassword || !confirmPassword) {
             toast.error("All password fields are required.")
+            return
+        }
+
+        if (newPassword.length < 6) {
+            toast.error("New password must be at least 6 characters long.")
             return
         }
 
@@ -241,7 +301,8 @@ export default function ProfilePage() {
             setNewPassword("")
             setConfirmPassword("")
         } catch (error: any) {
-            toast.error("Failed to update password: " + error.message)
+            console.error("Password update failed:", error)
+            toast.error("Failed to update password: " + (error.message || "Unknown error"))
         } finally {
             setUpdatingPassword(false)
         }
@@ -257,7 +318,7 @@ export default function ProfilePage() {
             toast.success(checked ? "Two-Factor Authentication enabled!" : "Two-Factor Authentication disabled.")
         } catch (err: any) {
             setTwoFactorEnabled(!checked)
-            toast.error("Failed to update 2FA setting: " + err.message)
+            toast.error("Failed to update 2FA setting: " + (err.message || "Unknown error"))
         }
     }
 
@@ -277,8 +338,28 @@ export default function ProfilePage() {
 
     const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0 && user) {
-            setUploadingDoc(true)
             const file = e.target.files[0]
+
+            // Validation: File size (limit to 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                toast.error("Document size must be less than 10MB.")
+                return
+            }
+
+            // Validation: File type (PDF, doc/docx, images)
+            const allowedTypes = [
+                'application/pdf', 
+                'application/msword', 
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+                'image/jpeg', 
+                'image/png'
+            ]
+            if (!allowedTypes.includes(file.type)) {
+                toast.error("Invalid file type. Only PDF, DOC, DOCX, JPG, and PNG are allowed.")
+                return
+            }
+
+            setUploadingDoc(true)
             try {
                 const formData = new FormData()
                 formData.append("file", file)
@@ -286,7 +367,10 @@ export default function ProfilePage() {
                     method: "POST",
                     body: formData
                 })
-                if (!res.ok) throw new Error("Upload failed")
+                if (!res.ok) {
+                    const errText = await res.text()
+                    throw new Error(errText || "Upload failed")
+                }
                 const data = await res.json()
                 const documentUrl = data.url
 
@@ -303,16 +387,18 @@ export default function ProfilePage() {
                 if (insertError) throw insertError
 
                 toast.success("Document uploaded successfully!")
+                
                 // Refresh list
-                const { data: updatedDocs } = await supabase
+                const { data: updatedDocs, error: fetchErr } = await supabase
                     .from("user_documents")
                     .select("*")
                     .eq("user_id", user.id)
                     .order("created_at", { ascending: false })
+                if (fetchErr) throw fetchErr
                 setDocuments(updatedDocs || [])
             } catch (err: any) {
                 console.error("Document upload failed", err)
-                toast.error("Failed to upload document: " + err.message)
+                toast.error("Failed to upload document: " + (err.message || "Unknown error"))
             } finally {
                 setUploadingDoc(false)
             }
@@ -322,6 +408,12 @@ export default function ProfilePage() {
     const handleDeleteDocument = async (id: number) => {
         if (!window.confirm("Are you sure you want to delete this document?")) return
         try {
+            // Find and delete the file from R2
+            const docToDelete = documents.find(doc => doc.id === id)
+            if (docToDelete?.url) {
+                await deleteR2FileAction(docToDelete.url)
+            }
+
             const { error } = await supabase
                 .from("user_documents")
                 .delete()
@@ -331,7 +423,8 @@ export default function ProfilePage() {
             toast.success("Document deleted.")
             setDocuments(prev => prev.filter(doc => doc.id !== id))
         } catch (err: any) {
-            toast.error("Failed to delete document: " + err.message)
+            console.error("Document deletion failed:", err)
+            toast.error("Failed to delete document: " + (err.message || "Unknown error"))
         }
     }
 
@@ -362,7 +455,6 @@ export default function ProfilePage() {
                     <TabsList className="bg-white border border-border/50 p-1 rounded-xl h-auto flex-wrap">
                         <TabsTrigger value="general" className="py-2 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary rounded-lg">General</TabsTrigger>
                         <TabsTrigger value="security" className="py-2 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary rounded-lg">Security</TabsTrigger>
-                        <TabsTrigger value="notifications" className="py-2 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary rounded-lg">Notifications</TabsTrigger>
                         <TabsTrigger value="documents" className="py-2 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary rounded-lg">Documents</TabsTrigger>
                     </TabsList>
                 </div>
@@ -374,24 +466,24 @@ export default function ProfilePage() {
                             <CardTitle className="text-xl font-bold text-primary">Profile Information</CardTitle>
                             <CardDescription>Update your photo and personal details.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-8">
-                            {/* Photo Upload */}
-                            <div className="flex flex-col sm:flex-row items-center gap-6">
-                                <div className="relative group" onClick={handleAvatarClick}>
-                                    <Avatar className="h-24 w-24 border-2 border-dashed border-slate-200 cursor-pointer shadow-sm relative overflow-hidden">
-                                        <AvatarImage src={avatarUrl} className="object-cover" />
-                                        <AvatarFallback className="text-2xl bg-slate-50 text-slate-400 font-bold">{userInitials}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer z-10">
-                                        {uploading ? (
-                                            <Loader2 className="h-8 w-8 text-white animate-spin" />
-                                        ) : (
-                                            <Camera className="h-8 w-8 text-white" />
-                                        )}
+                        <CardContent className="p-5">
+                            <div className="flex flex-col md:flex-row gap-6 items-start">
+                                {/* Left side: Avatar Upload */}
+                                <div className="flex flex-col items-center gap-3 w-full md:w-auto md:shrink-0 md:border-r md:border-border/50 md:pr-6">
+                                    <div className="relative group" onClick={handleAvatarClick}>
+                                        <Avatar className="h-20 w-20 border border-slate-200 cursor-pointer shadow-sm relative overflow-hidden">
+                                            <AvatarImage src={avatarUrl} className="object-cover" />
+                                            <AvatarFallback className="text-xl bg-slate-50 text-slate-400 font-bold">{userInitials}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer z-10">
+                                            {uploading ? (
+                                                <Loader2 className="h-6 w-6 text-white animate-spin" />
+                                            ) : (
+                                                <Camera className="h-6 w-6 text-white" />
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex-1 text-center sm:text-left">
-                                    <div className="flex flex-wrap justify-center sm:justify-start gap-3">
+                                    <div className="flex flex-col items-center gap-1.5 w-full">
                                         <input
                                             type="file"
                                             id="avatar-upload-input"
@@ -400,75 +492,71 @@ export default function ProfilePage() {
                                             className="hidden"
                                             disabled={uploading}
                                         />
-                                        <Button variant="outline" size="sm" onClick={handleAvatarClick} disabled={uploading} className="rounded-xl">
-                                            {uploading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                                            Change Avatar
-                                        </Button>
-                                        {avatarUrl && (
-                                            <Button variant="ghost" size="sm" onClick={handleRemoveAvatar} disabled={uploading} className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl">
-                                                Remove
+                                        <div className="flex gap-2 w-full justify-center">
+                                            <Button variant="outline" size="sm" onClick={handleAvatarClick} disabled={uploading} className="rounded-lg text-xs px-2.5 h-8">
+                                                Change
                                             </Button>
-                                        )}
+                                            {avatarUrl && (
+                                                <Button variant="ghost" size="sm" onClick={handleRemoveAvatar} disabled={uploading} className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg text-xs px-2.5 h-8">
+                                                    Remove
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-2">JPG, GIF or PNG. Max size of 800K</p>
+                                </div>
+
+                                {/* Right side: Personal Info Form */}
+                                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
+                                    <div className="space-y-1">
+                                        <Label htmlFor="fullName" className="text-xs font-semibold text-primary">Full Name</Label>
+                                        <Input
+                                            id="fullName"
+                                            value={fullName}
+                                            onChange={(e) => setFullName(e.target.value)}
+                                            className="h-9 rounded-lg text-sm focus-visible:ring-emerald-500"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label htmlFor="email" className="text-xs font-semibold text-primary">Email Address</Label>
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="h-9 rounded-lg text-sm focus-visible:ring-emerald-500"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label htmlFor="phone" className="text-xs font-semibold text-primary">Phone Number</Label>
+                                        <Input
+                                            id="phone"
+                                            type="tel"
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                            className="h-9 rounded-lg text-sm focus-visible:ring-emerald-500"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label htmlFor="address" className="text-xs font-semibold text-primary">Address</Label>
+                                        <Input
+                                            id="address"
+                                            value={address}
+                                            onChange={(e) => setAddress(e.target.value)}
+                                            className="h-9 rounded-lg text-sm focus-visible:ring-emerald-500"
+                                        />
+                                    </div>
+                                    <div className="space-y-1 md:col-span-2">
+                                        <Label htmlFor="bio" className="text-xs font-semibold text-primary">Bio / About (Optional)</Label>
+                                        <Textarea
+                                            id="bio"
+                                            placeholder="Tell us a little about yourself"
+                                            value={bio}
+                                            onChange={(e) => setBio(e.target.value)}
+                                            className="resize-none h-16 rounded-lg text-sm focus-visible:ring-emerald-500"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-
-                            <Separator className="bg-slate-100" />
-
-                            {/* Personal Info Form */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="fullName" className="font-semibold text-primary">Full Name</Label>
-                                    <Input
-                                        id="fullName"
-                                        value={fullName}
-                                        onChange={(e) => setFullName(e.target.value)}
-                                        className="h-11 rounded-xl focus-visible:ring-emerald-500"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="email" className="font-semibold text-primary">Email Address</Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="h-11 rounded-xl focus-visible:ring-emerald-500"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="phone" className="font-semibold text-primary">Phone Number</Label>
-                                    <Input
-                                        id="phone"
-                                        type="tel"
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        className="h-11 rounded-xl focus-visible:ring-emerald-500"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="address" className="font-semibold text-primary">Address</Label>
-                                    <Input
-                                        id="address"
-                                        value={address}
-                                        onChange={(e) => setAddress(e.target.value)}
-                                        className="h-11 rounded-xl focus-visible:ring-emerald-500"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="bio" className="font-semibold text-primary">Bio / About (Optional)</Label>
-                                <Textarea
-                                    id="bio"
-                                    placeholder="Tell us a little about yourself"
-                                    value={bio}
-                                    onChange={(e) => setBio(e.target.value)}
-                                    className="resize-none h-28 rounded-xl focus-visible:ring-emerald-500"
-                                />
-                            </div>
-
                         </CardContent>
                         <CardFooter className="flex justify-end gap-2 border-t border-border/40 p-4 bg-gray-50/50">
                             <Button variant="ghost" onClick={handleCancel} disabled={saving} className="rounded-xl">Cancel</Button>
@@ -544,40 +632,7 @@ export default function ProfilePage() {
                     </Card>
                 </TabsContent>
 
-                {/* ─── NOTIFICATIONS TAB ─── */}
-                <TabsContent value="notifications" className="space-y-6">
-                    <Card className="border-border/60 bg-white rounded-2xl overflow-hidden shadow-sm">
-                        <CardHeader>
-                            <CardTitle className="text-xl font-bold text-primary">Email Notifications</CardTitle>
-                            <CardDescription>Choose what you want to be notified about.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <Label className="text-base font-semibold text-primary">Price Alerts</Label>
-                                    <p className="text-sm text-muted-foreground">Get notified when a saved property price drops.</p>
-                                </div>
-                                <Switch defaultChecked />
-                            </div>
-                            <Separator className="bg-slate-100" />
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <Label className="text-base font-semibold text-primary">New Listings</Label>
-                                    <p className="text-sm text-muted-foreground">Get notified about new properties in your preferred area.</p>
-                                </div>
-                                <Switch defaultChecked />
-                            </div>
-                            <Separator className="bg-slate-100" />
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <Label className="text-base font-semibold text-primary">Marketing Emails</Label>
-                                    <p className="text-sm text-muted-foreground">Receive updates about new features and promotions.</p>
-                                </div>
-                                <Switch />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+
 
                 {/* ─── DOCUMENTS TAB ─── */}
                 <TabsContent value="documents" className="space-y-6">

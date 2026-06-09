@@ -4,17 +4,31 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Phone, Mail, MessageCircle, ArrowRight } from "lucide-react"
 
 interface AgentCardProps {
-    agent: {
+    agent?: {
         name: string
         company: string
         phone: string
         email: string
         whatsapp: string
-        photo: string
-    }
+        photo?: string
+        photo_url?: string
+    } | null
+}
+
+const defaultAgent = {
+    name: "Century Support Team",
+    company: "Century Lands & Homes",
+    phone: "+94 77 123 4567",
+    email: "support@centurylands.com",
+    whatsapp: "+94 77 123 4567",
+    photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+    photo_url: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150"
 }
 
 export function AgentCard({ agent }: AgentCardProps) {
+    const activeAgent = agent || defaultAgent
+    const photoSrc = activeAgent.photo || activeAgent.photo_url || defaultAgent.photo_url
+
     return (
         <div className="space-y-3">
             <h2 className="text-xl font-bold text-foreground">Listing Agent</h2>
@@ -25,8 +39,8 @@ export function AgentCard({ agent }: AgentCardProps) {
                         {/* Agent Photo */}
                         <div className="relative h-16 w-16 rounded-full overflow-hidden border-2 border-secondary/30 shrink-0">
                             <Image
-                                src={agent.photo}
-                                alt={agent.name}
+                                src={photoSrc}
+                                alt={activeAgent.name}
                                 fill
                                 className="object-cover"
                             />
@@ -34,8 +48,8 @@ export function AgentCard({ agent }: AgentCardProps) {
 
                         {/* Agent Info */}
                         <div className="flex-1">
-                            <h3 className="text-base font-bold text-foreground">{agent.name}</h3>
-                            <p className="text-sm text-muted-foreground">{agent.company}</p>
+                            <h3 className="text-base font-bold text-foreground">{activeAgent.name}</h3>
+                            <p className="text-sm text-muted-foreground">{activeAgent.company}</p>
                         </div>
                     </div>
 
@@ -46,7 +60,7 @@ export function AgentCard({ agent }: AgentCardProps) {
                             asChild
                             className="rounded-xl h-10 gap-2 border-border/60 hover:border-secondary hover:text-secondary text-sm transition-all"
                         >
-                            <a href={`tel:${agent.phone}`}>
+                            <a href={`tel:${activeAgent.phone}`}>
                                 <Phone className="h-4 w-4" />
                                 Call
                             </a>
@@ -57,7 +71,7 @@ export function AgentCard({ agent }: AgentCardProps) {
                             asChild
                             className="rounded-xl h-10 gap-2 border-border/60 hover:border-primary hover:text-primary text-sm transition-all"
                         >
-                            <a href={`mailto:${agent.email}`}>
+                            <a href={`mailto:${activeAgent.email}`}>
                                 <Mail className="h-4 w-4" />
                                 Email
                             </a>
@@ -68,7 +82,7 @@ export function AgentCard({ agent }: AgentCardProps) {
                             asChild
                             className="rounded-xl h-10 gap-2 border-border/60 hover:border-green-600 hover:text-green-600 text-sm transition-all"
                         >
-                            <a href={`https://wa.me/${agent.whatsapp}`} target="_blank" rel="noopener noreferrer">
+                            <a href={`https://wa.me/${activeAgent.whatsapp}`} target="_blank" rel="noopener noreferrer">
                                 <MessageCircle className="h-4 w-4" />
                                 WhatsApp
                             </a>

@@ -10,12 +10,12 @@ interface PropertyFeaturesProps {
 }
 
 export function PropertyFeatures({
-    beds,
-    baths,
-    size,
-    landSize,
-    parking,
-    yearBuilt,
+    beds = 0,
+    baths = 0,
+    size = "0",
+    landSize = "N/A",
+    parking = 0,
+    yearBuilt = 2024,
 }: PropertyFeaturesProps) {
     const features = [
         { icon: BedDouble, label: "Bedrooms", value: beds },

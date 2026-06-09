@@ -2,7 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { BedDouble, Bath, Maximize } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import type { Property } from "@/data/mockProperties"
+import type { Property } from "@/lib/backend/properties"
 
 interface SimilarPropertiesProps {
     properties: Property[]
@@ -26,7 +26,7 @@ export function SimilarProperties({ properties }: SimilarPropertiesProps) {
                             {/* Image */}
                             <div className="relative h-48 overflow-hidden">
                                 <Image
-                                    src={property.images[0]}
+                                    src={property.images?.[0] || "/mock/1.jpg"}
                                     alt={property.title}
                                     fill
                                     className="object-cover transition-transform duration-700 group-hover:scale-110"

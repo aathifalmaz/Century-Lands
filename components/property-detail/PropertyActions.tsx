@@ -6,18 +6,20 @@ import { Calendar, Heart, Phone, MessageCircle, Share2, Loader2 } from "lucide-r
 import { supabase } from "@/lib/supabase"
 import { saveProperty, unsaveProperty, isPropertySaved } from "@/lib/backend/savedProperties"
 import { toast } from "sonner"
+import { BookingDialog } from "@/components/property-detail/BookingDialog"
 
 interface PropertyActionsProps {
     propertyId: string | number
+    propertyTitle: string
     phone: string
     whatsapp: string
-    onBookAppointment: () => void
 }
 
-export function PropertyActions({ propertyId, phone, whatsapp, onBookAppointment }: PropertyActionsProps) {
+export function PropertyActions({ propertyId, propertyTitle, phone, whatsapp }: PropertyActionsProps) {
     const [user, setUser] = useState<any>(null)
     const [isFavorited, setIsFavorited] = useState(false)
     const [loadingFavorite, setLoadingFavorite] = useState(false)
+    const [bookingOpen, setBookingOpen] = useState(false)
 
     useEffect(() => {
         const checkUserAndFavorite = async () => {
@@ -43,9 +45,14 @@ export function PropertyActions({ propertyId, phone, whatsapp, onBookAppointment
             return
         }
 
+        const numericId = parseInt(propertyId.toString())
+        if (isNaN(numericId)) {
+            toast.error("Invalid property identification.")
+            return
+        }
+
         setLoadingFavorite(true)
         try {
-            const numericId = parseInt(propertyId.toString())
             if (isFavorited) {
                 await unsaveProperty(user.id, numericId)
                 setIsFavorited(false)
@@ -78,7 +85,7 @@ export function PropertyActions({ propertyId, phone, whatsapp, onBookAppointment
         <div className="flex flex-wrap gap-3">
             {/* Primary CTA */}
             <Button
-                onClick={onBookAppointment}
+                onClick={() => setBookingOpen(true)}
                 className="bg-primary hover:bg-secondary text-white rounded-full px-6 h-11 text-sm font-semibold shadow-lg hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 gap-2"
             >
                 <Calendar className="h-4 w-4" />
@@ -133,6 +140,14 @@ export function PropertyActions({ propertyId, phone, whatsapp, onBookAppointment
                 <Share2 className="h-4 w-4" />
                 Share
             </Button>
+
+            {/* Mount Booking Dialog */}
+            <BookingDialog
+                open={bookingOpen}
+                onOpenChange={setBookingOpen}
+                propertyTitle={propertyTitle}
+                propertyId={parseInt(propertyId.toString())}
+            />
         </div>
     )
 }

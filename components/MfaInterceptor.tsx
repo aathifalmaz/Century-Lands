@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, ShieldAlert } from "lucide-react"
 import { toast } from "sonner"
+import { sendMfaOtp } from "@/lib/actions/auth"
 
 export default function MfaInterceptor({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
@@ -34,12 +35,15 @@ export default function MfaInterceptor({ children }: { children: React.ReactNode
                     if (!otpSent) {
                         setOtpSent(true)
                         try {
-                            const { error } = await supabase.auth.signInWithOtp({
-                                email: activeUser.email!,
-                                options: { shouldCreateUser: false }
-                            })
-                            if (error) throw error
-                            toast.success("Two-Factor Authentication: A verification code has been sent to your email.")
+                            const res = await sendMfaOtp(activeUser.email!, window.location.origin)
+                            if (!res.success || res.error) {
+                                throw new Error(res.error || "Failed to send 2FA verification code")
+                            }
+                            if (res.sandboxNotice) {
+                                toast.warning(res.sandboxNotice, { duration: 10000 })
+                            } else {
+                                toast.success("Two-Factor Authentication: A verification code has been sent to your email.")
+                            }
                         } catch (err: any) {
                             console.error("MFA OTP send failure", err)
                             toast.error("Failed to send 2FA verification code: " + err.message)

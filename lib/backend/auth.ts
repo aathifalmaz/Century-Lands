@@ -5,8 +5,7 @@ export async function signInWithEmail(email: string, password: string) {
         email,
         password,
     })
-    if (error) throw error
-    return data
+    return { data, error }
 }
 
 export async function signUpWithEmail(email: string, password: string, metadata: any = {}) {
@@ -17,15 +16,14 @@ export async function signUpWithEmail(email: string, password: string, metadata:
             data: metadata,
         },
     })
-    if (error) throw error
-    return data
+    return { data, error }
 }
 
 export async function signInWithGoogle() {
     const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: window.location.origin + '/',
+            redirectTo: window.location.origin + '/auth/callback',
         },
     })
     if (error) throw error
@@ -33,6 +31,9 @@ export async function signInWithGoogle() {
 }
 
 export async function signOut() {
+    if (typeof window !== 'undefined') {
+        sessionStorage.removeItem("2fa_verified")
+    }
     const { error } = await supabase.auth.signOut()
     if (error) throw error
 }

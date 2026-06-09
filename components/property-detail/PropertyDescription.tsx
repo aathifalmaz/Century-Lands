@@ -8,9 +8,10 @@ interface PropertyDescriptionProps {
     description: string
 }
 
-export function PropertyDescription({ description }: PropertyDescriptionProps) {
+export function PropertyDescription({ description = "" }: PropertyDescriptionProps) {
     const [isExpanded, setIsExpanded] = useState(false)
-    const isLong = description.length > 400
+    const displayDescription = description || "No description provided for this property."
+    const isLong = displayDescription.length > 400
 
     return (
         <div className="space-y-3">
@@ -21,7 +22,7 @@ export function PropertyDescription({ description }: PropertyDescriptionProps) {
                     className={`text-muted-foreground text-sm leading-relaxed whitespace-pre-line transition-all duration-500 ${!isExpanded && isLong ? "max-h-[120px] overflow-hidden" : ""
                         }`}
                 >
-                    {description}
+                    {displayDescription}
                 </div>
 
                 {/* Fade overlay when collapsed 

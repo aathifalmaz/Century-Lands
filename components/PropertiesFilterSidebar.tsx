@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,12 +10,35 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { SlidersHorizontal, RotateCcw } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function PropertiesFilterSidebar() {
-    const [price, setPrice] = useState([50000, 500000])
-    const [sqft, setSqft] = useState([500, 5000])
-    const [propertyType, setPropertyType] = useState("")
+    const router = useRouter()
+    const searchParams = useSearchParams()
+
+    const [searchLocation, setSearchLocation] = useState("")
+    const [price, setPrice] = useState([0, 150000000])
+    const [sqft, setSqft] = useState([0, 10000])
+    const [propertyType, setPropertyType] = useState("all")
     const [amenities, setAmenities] = useState<string[]>([])
+
+    // Load initial values from searchParams
+    useEffect(() => {
+        setSearchLocation(searchParams.get("location") || "")
+        
+        const minPrice = searchParams.get("minPrice") ? parseInt(searchParams.get("minPrice")!) : 0
+        const maxPrice = searchParams.get("maxPrice") ? parseInt(searchParams.get("maxPrice")!) : 150000000
+        setPrice([minPrice, maxPrice])
+
+        const minSize = searchParams.get("minSize") ? parseInt(searchParams.get("minSize")!) : 0
+        const maxSize = searchParams.get("maxSize") ? parseInt(searchParams.get("maxSize")!) : 10000
+        setSqft([minSize, maxSize])
+
+        setPropertyType(searchParams.get("propertyType") || "all")
+
+        const ams = searchParams.get("amenities")
+        setAmenities(ams ? ams.split(",") : [])
+    }, [searchParams])
 
     const amenityList = [
         "Swimming Pool",
@@ -34,11 +57,33 @@ export default function PropertiesFilterSidebar() {
         )
     }
 
+    const handleApplyFilters = () => {
+        const params = new URLSearchParams()
+        if (searchLocation.trim()) params.set("location", searchLocation.trim())
+        if (price[0] > 0) params.set("minPrice", price[0].toString())
+        if (price[1] < 150000000) params.set("maxPrice", price[1].toString())
+        if (sqft[0] > 0) params.set("minSize", sqft[0].toString())
+        if (sqft[1] < 10000) params.set("maxSize", sqft[1].toString())
+        if (propertyType && propertyType !== "all") params.set("propertyType", propertyType)
+        if (amenities.length > 0) params.set("amenities", amenities.join(","))
+
+        router.push(`/properties?${params.toString()}`)
+    }
+
     const resetFilters = () => {
-        setPrice([50000, 500000])
-        setSqft([500, 5000])
-        setPropertyType("")
+        setSearchLocation("")
+        setPrice([0, 150000000])
+        setSqft([0, 10000])
+        setPropertyType("all")
         setAmenities([])
+        router.push("/properties")
+    }
+
+    const formatPriceLabel = (val: number) => {
+        if (val >= 1000000) {
+            return `${(val / 1000000).toFixed(0)}M LKR`
+        }
+        return `${val.toLocaleString()} LKR`
     }
 
     return (
@@ -64,8 +109,13 @@ export default function PropertiesFilterSidebar() {
                 <CardContent className="space-y-4 px-4 pb-2 overflow-y-auto flex-1">
                     {/* Search */}
                     <div className="space-y-1.5">
-                        <Label className="text-xs">Search Location</Label>
-                        <Input placeholder="City, area, or address" className="h-9 text-sm" />
+                        <Label className="text-xs">Search Location / Keyword</Label>
+                        <Input 
+                            placeholder="City, area, or address" 
+                            className="h-9 text-sm" 
+                            value={searchLocation}
+                            onChange={(e) => setSearchLocation(e.target.value)}
+                        />
                     </div>
 
                     <Separator />
@@ -77,14 +127,14 @@ export default function PropertiesFilterSidebar() {
                         <Slider
                             value={price}
                             min={0}
-                            max={1000000}
-                            step={10000}
+                            max={150000000}
+                            step={1000000}
                             onValueChange={(value) => setPrice(value)}
                         />
 
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
-                            <span>${price[0].toLocaleString()}</span>
-                            <span>${price[1].toLocaleString()}</span>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span>{formatPriceLabel(price[0])}</span>
+                            <span>{formatPriceLabel(price[1])}</span>
                         </div>
                     </div>
 
@@ -102,7 +152,7 @@ export default function PropertiesFilterSidebar() {
                             onValueChange={(value) => setSqft(value)}
                         />
 
-                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
                             <span>{sqft[0].toLocaleString()} sqft</span>
                             <span>{sqft[1].toLocaleString()} sqft</span>
                         </div>
@@ -118,6 +168,7 @@ export default function PropertiesFilterSidebar() {
                                 <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="all">All Types</SelectItem>
                                 <SelectItem value="land">Lands / Plots</SelectItem>
                                 <SelectItem value="house">Houses</SelectItem>
                                 <SelectItem value="apartment">Apartments</SelectItem>
@@ -153,7 +204,7 @@ export default function PropertiesFilterSidebar() {
                                     />
                                     <Label
                                         htmlFor={item}
-                                        className="text-xs font-normal"
+                                        className="text-xs font-normal cursor-pointer select-none"
                                     >
                                         {item}
                                     </Label>
@@ -165,7 +216,10 @@ export default function PropertiesFilterSidebar() {
 
                 {/* Pinned CTA */}
                 <div className="px-4 py-3 border-t border-border/40 shrink-0">
-                    <Button className="w-full rounded-xl h-9 text-sm font-medium shadow-lg hover:bg-secondary hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300">
+                    <Button 
+                        onClick={handleApplyFilters}
+                        className="w-full rounded-xl h-9 text-sm font-medium shadow-lg hover:bg-secondary hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 bg-primary text-white"
+                    >
                         Apply Filters
                     </Button>
                 </div>
@@ -173,4 +227,3 @@ export default function PropertiesFilterSidebar() {
         </aside>
     )
 }
-

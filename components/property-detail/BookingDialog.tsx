@@ -104,11 +104,10 @@ export function BookingDialog({
                 property_title: propertyTitle,
                 customer_name: name,
                 email: email,
-                phone: phone, // Added phone
                 appointment_date: format(date, "yyyy-MM-dd"),
                 appointment_time: formattedTime,
                 type: "Site Visit",
-                notes: message,
+                notes: `Phone: ${phone}${message ? `\nMessage: ${message}` : ""}`,
             })
 
             toast.success("Appointment request sent successfully!")
