@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Search, Filter, UserPlus, Shield, ShieldAlert, ShieldCheck, Mail, User, Ban, Pencil, MoreVertical, Loader2, Trash } from "lucide-react"
+import { Search, Filter, UserPlus, Shield, ShieldAlert, ShieldCheck, Mail, User, Ban, Pencil, MoreVertical, Loader2, Trash, ChevronLeft, ChevronRight, Phone, Building } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -29,12 +30,15 @@ import { BackgroundDecor } from "@/components/BackgroundDecor"
 import { adminListUsers, adminCreateUser, adminUpdateUser, adminDeleteUser } from "@/lib/actions/auth"
 import { toast } from "sonner"
 
+const ITEMS_PER_PAGE = 10
+
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [roleFilter, setRoleFilter] = useState("All")
     const [statusFilter, setStatusFilter] = useState("All")
+    const [currentPage, setCurrentPage] = useState(1)
 
     // Dialog States
     const [isAddOpen, setIsAddOpen] = useState(false)
@@ -71,6 +75,17 @@ export default function AdminUsersPage() {
 
         return matchesSearch && matchesRole && matchesStatus
     })
+
+    // Pagination
+    const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE)
+    const paginatedUsers = filteredUsers.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    )
+
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [searchTerm, roleFilter, statusFilter])
 
     const handleAddUser = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -171,22 +186,30 @@ export default function AdminUsersPage() {
         }
     }
 
+    const getRoleBadgeStyle = (role: string) => {
+        switch (role) {
+            case "Admin": return "bg-purple-50 text-purple-700 ring-1 ring-purple-200"
+            case "Agent": return "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+            default: return "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
+        }
+    }
+
     return (
-        <div className="p-6 space-y-4 min-h-screen">
+        <div className="p-4 pt-1 sm:p-6 space-y-4 min-h-screen">
             <BackgroundDecor />
             {/* Header */}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-primary">User Management</h2>
-                    <p className="text-muted-foreground">Manage system access, roles, and user status.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-primary">User Management</h2>
+                    <p className="text-muted-foreground text-sm">Manage system access, roles, and user status.</p>
                 </div>
                 <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                     <DialogTrigger asChild>
-                        <Button className="hover:bg-secondary bg-primary text-white" onClick={resetForm}>
+                        <Button className="hover:bg-secondary bg-primary text-white w-full sm:w-auto" onClick={resetForm}>
                             <UserPlus className="mr-2 h-4 w-4" /> Add User
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[500px] rounded-2xl">
+                    <DialogContent className="sm:max-w-[500px] w-[95vw] rounded-2xl">
                         <DialogHeader>
                             <DialogTitle>Add New User</DialogTitle>
                             <DialogDescription>
@@ -194,7 +217,7 @@ export default function AdminUsersPage() {
                             </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleAddUser} className="space-y-4 py-2">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="name">Full Name</Label>
                                     <Input id="name" className="rounded-lg" placeholder="Enter full name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
@@ -256,7 +279,7 @@ export default function AdminUsersPage() {
             </div>
 
             {/* Filters & Search */}
-            <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="flex flex-col gap-3">
                 <div className="relative flex-1 w-full bg-white rounded-lg">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -266,9 +289,9 @@ export default function AdminUsersPage() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div className="flex gap-2 w-full md:w-auto">
+                <div className="flex gap-2 w-full">
                     <Select value={roleFilter} onValueChange={setRoleFilter}>
-                        <SelectTrigger className="w-full md:w-[150px] rounded-lg bg-white">
+                        <SelectTrigger className="w-full sm:w-[150px] rounded-lg bg-white">
                             <div className="flex items-center gap-2">
                                 <Shield className="h-4 w-4 text-slate-500" />
                                 <SelectValue placeholder="All Roles" />
@@ -283,7 +306,7 @@ export default function AdminUsersPage() {
                     </Select>
 
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-full md:w-[150px] rounded-lg bg-white">
+                        <SelectTrigger className="w-full sm:w-[150px] rounded-lg bg-white">
                             <div className="flex items-center gap-2">
                                 <Filter className="h-4 w-4 text-slate-500" />
                                 <SelectValue placeholder="All Status" />
@@ -299,8 +322,8 @@ export default function AdminUsersPage() {
                 </div>
             </div>
 
-            {/* Users Table */}
-            <div className="border rounded-xl bg-white hover:shadow-sm transition-shadow overflow-hidden relative">
+            {/* Desktop Table */}
+            <div className="hidden md:block border rounded-xl bg-white hover:shadow-sm transition-shadow overflow-hidden relative">
                 {loading && (
                     <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] flex items-center justify-center z-10">
                         <Loader2 className="h-8 w-8 text-primary animate-spin" />
@@ -325,7 +348,7 @@ export default function AdminUsersPage() {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredUsers.map((user) => (
+                            paginatedUsers.map((user) => (
                                 <TableRow key={user.id} className="group hover:bg-slate-50/50">
                                     <TableCell className="pl-10">
                                         <div className="flex items-center gap-3">
@@ -340,10 +363,7 @@ export default function AdminUsersPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant="outline" className={`rounded-md px-2.5 py-0.5 font-normal border-0 flex w-fit items-center gap-1.5 ${user.role === "Admin" ? "bg-purple-50 text-purple-700 ring-1 ring-purple-200" :
-                                            user.role === "Agent" ? "bg-blue-50 text-blue-700 font-normal ring-1 ring-blue-200" :
-                                                "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
-                                            }`}>
+                                        <Badge variant="outline" className={`rounded-md px-2.5 py-0.5 font-normal border-0 flex w-fit items-center gap-1.5 ${getRoleBadgeStyle(user.role)}`}>
                                             {user.role === "Admin" && <ShieldAlert className="h-3 w-3" />}
                                             {user.role === "Agent" && <ShieldCheck className="h-3 w-3" />}
                                             {user.role === "User" && <User className="h-3 w-3" />}
@@ -399,9 +419,132 @@ export default function AdminUsersPage() {
                 </Table>
             </div>
 
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+                {loading && (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                    </div>
+                )}
+                {!loading && paginatedUsers.length === 0 && (
+                    <div className="text-center py-12 text-muted-foreground">No users found.</div>
+                )}
+                {!loading && paginatedUsers.map((user) => (
+                    <Card key={user.id} className="overflow-hidden bg-white border shadow-sm">
+                        <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                                <Avatar className="h-10 w-10 border border-slate-200 shrink-0">
+                                    <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.name}`} />
+                                    <AvatarFallback className="bg-primary/5 text-primary font-normal text-sm">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex justify-between items-start">
+                                        <div className="min-w-0">
+                                            <h3 className="font-semibold text-sm truncate">{user.name}</h3>
+                                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-7 w-7 p-0 shrink-0">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-[160px] rounded-xl">
+                                                <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Edit Profile
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    className="text-amber-600 focus:text-amber-600 focus:bg-amber-50"
+                                                    onClick={() => deactivateUser(user.id)}
+                                                >
+                                                    <Ban className="mr-2 h-4 w-4" /> Deactivate
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                                    onClick={() => handleDeleteUser(user.id)}
+                                                >
+                                                    <Trash className="mr-2 h-4 w-4" /> Delete User
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5 mt-2">
+                                        <Badge variant="outline" className={`rounded-md px-2 py-0.5 font-normal border-0 text-[10px] h-5 flex items-center gap-1 ${getRoleBadgeStyle(user.role)}`}>
+                                            {user.role === "Admin" && <ShieldAlert className="h-3 w-3" />}
+                                            {user.role === "Agent" && <ShieldCheck className="h-3 w-3" />}
+                                            {user.role === "User" && <User className="h-3 w-3" />}
+                                            {user.role}
+                                        </Badge>
+                                        <div className="flex items-center gap-1.5 text-xs">
+                                            <div className={`h-2 w-2 rounded-full ${user.status === 'Active' ? 'bg-green-500' :
+                                                user.status === 'Inactive' ? 'bg-slate-300' : 'bg-red-500'
+                                                }`} />
+                                            <span className="text-slate-600">{user.status}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
+                                        {user.phone && (
+                                            <div className="flex items-center gap-1">
+                                                <Phone className="h-3 w-3" /> {user.phone}
+                                            </div>
+                                        )}
+                                        {user.department && (
+                                            <div className="flex items-center gap-1">
+                                                <Building className="h-3 w-3" /> {user.department}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2">
+                <div className="text-sm text-muted-foreground order-2 sm:order-1">
+                    Showing {filteredUsers.length > 0 ? Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredUsers.length) : 0}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length)} of {filteredUsers.length}
+                </div>
+                {totalPages > 1 && (
+                    <div className="flex items-center gap-1 order-1 sm:order-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <Button
+                                key={page}
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="h-8 w-8 p-0 text-xs"
+                            >
+                                {page}
+                            </Button>
+                        ))}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+            </div>
+
             {/* Edit Dialog (Reusing form structure) */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="sm:max-w-[500px] rounded-2xl">
+                <DialogContent className="sm:max-w-[500px] w-[95vw] rounded-2xl">
                     <DialogHeader>
                         <DialogTitle>Edit User Profile</DialogTitle>
                         <DialogDescription>
@@ -409,7 +552,7 @@ export default function AdminUsersPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleEditUser} className="space-y-4 py-2">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="edit-name">Full Name</Label>
                                 <Input id="edit-name" className="rounded-xl" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />

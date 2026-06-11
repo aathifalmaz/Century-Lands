@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Century Lands & Homes",
   description: "Real Estate Platform for Buying & Selling Properties across Sri Lanka",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({

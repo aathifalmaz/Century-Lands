@@ -5,7 +5,7 @@ export function ContactHero() {
             <div className="absolute inset-0 z-0">
                 <img
                     src="https://images.unsplash.com/photo-1516387938699-a93567ec168e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2071&q=80"
-                    alt="Contact Century Lands"
+                    alt="Contact Century Lands & Homes"
                     className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-black/60" />

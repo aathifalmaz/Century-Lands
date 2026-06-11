@@ -42,6 +42,11 @@ export default function CookiePolicyPage() {
                 <li>Block tracking cookies</li>
             </ul>
             <p><strong>Note:</strong> Disabling may affect site functionality.</p>
+
+            <h2>5. Contact Us</h2>
+            <p>
+                If you have questions about our use of cookies, please email us at <a href="mailto:centurylandshomes@gmail.com">centurylandshomes@gmail.com</a>.
+            </p>
         </PolicyLayout>
     )
 }

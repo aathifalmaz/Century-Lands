@@ -24,9 +24,9 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
     return (
         <>
             {/* Gallery: Main Image + Vertical Thumbnails */}
-            <div className="flex flex-col md:flex-row gap-3 max-w-4xl">
+            <div className="flex flex-col md:flex-row gap-3 w-full max-w-full overflow-hidden">
                 {/* Main Image */}
-                <div className="relative flex-1 h-[350px] md:h-[480px] rounded-2xl overflow-hidden group cursor-pointer"
+                <div className="relative w-full aspect-[16/10] md:aspect-auto h-auto md:h-[480px] md:flex-1 rounded-none md:rounded-2xl overflow-hidden group cursor-pointer"
                     onClick={() => setLightboxOpen(true)}
                 >
                     <Image
@@ -64,7 +64,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
                 </div>
 
                 {/* Vertical thumbnail strip (desktop) / Horizontal (mobile) */}
-                <div className="flex md:flex-col gap-3 md:w-24 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto md:max-h-[420px] pb-1 md:pb-0 md:pr-1 p-1 scrollbar-thin">
+                <div className="flex md:flex-col gap-3 w-full md:w-24 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto md:max-h-[420px] pb-1 md:pb-0 md:pr-1 p-1 scrollbar-thin px-6 md:px-0">
                     {images.map((img, index) => (
                         <button
                             key={index}

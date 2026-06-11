@@ -44,10 +44,22 @@ export default function BrandPolicyPage() {
                 <li>Use brand visuals</li>
             </ul>
 
-            <h2>5. Reporting Brand Misuse</h2>
-            <p>If you encounter fake listings or impersonation, report to:</p>
+            <h2>5. Brand Assets Guidelines</h2>
+            <p>Our official brand colors consist of:</p>
+            <ul>
+                <li><strong>Primary:</strong> Deep Navy Blue (`#0B2545`)</li>
+                <li><strong>Secondary:</strong> Gold/Yellow (`#F5C518`)</li>
+                <li><strong>Supporting Elements:</strong> Clean Whites, Slate Grays, and Dark Accent tones.</li>
+            </ul>
             <p>
-                📧 <a href="mailto:centurylandshomes@gmail.com">centurylandshomes@gmail.com</a>
+                To request high-resolution vector assets of the official Century Lands logo or to obtain authorization for media features, please write to us.
+            </p>
+
+            <h2>6. Reporting Brand Misuse</h2>
+            <p>If you encounter fake property ads, phishing attempts, or unauthorized representatives claiming association with us, please contact us immediately:</p>
+            <p>
+                Email: <a href="mailto:centurylandshomes@gmail.com">centurylandshomes@gmail.com</a><br />
+                Phone: 070 722 0224
             </p>
         </PolicyLayout>
     )

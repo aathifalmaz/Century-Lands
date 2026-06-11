@@ -82,64 +82,66 @@ export function PropertyActions({ propertyId, propertyTitle, phone, whatsapp }: 
     }
 
     return (
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col gap-3 w-full">
             {/* Primary CTA */}
             <Button
                 onClick={() => setBookingOpen(true)}
-                className="bg-primary hover:bg-secondary text-white rounded-full px-6 h-11 text-sm font-semibold shadow-lg hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 gap-2"
+                className="w-full bg-primary hover:bg-secondary text-white rounded-full px-6 h-11 text-sm font-semibold shadow-lg hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 gap-2"
             >
                 <Calendar className="h-4 w-4" />
                 Book Appointment
             </Button>
 
-            {/* Favorites */}
-            <Button
-                variant="outline"
-                onClick={handleFavoriteToggle}
-                disabled={loadingFavorite}
-                className="rounded-full h-11 px-5 gap-2 border-border/60 hover:border-destructive hover:text-destructive transition-all"
-            >
-                {loadingFavorite ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                ) : (
-                    <Heart className={`h-4 w-4 transition-colors ${isFavorited ? "fill-destructive text-destructive" : ""}`} />
-                )}
-                {isFavorited ? "Saved" : "Save"}
-            </Button>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 w-full">
+                {/* Favorites */}
+                <Button
+                    variant="outline"
+                    onClick={handleFavoriteToggle}
+                    disabled={loadingFavorite}
+                    className="w-full rounded-full h-11 px-4 gap-2 border-border/60 hover:border-destructive hover:text-destructive transition-all"
+                >
+                    {loadingFavorite ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : (
+                        <Heart className={`h-4 w-4 transition-colors ${isFavorited ? "fill-destructive text-destructive" : ""}`} />
+                    )}
+                    {isFavorited ? "Saved" : "Save"}
+                </Button>
 
-            {/* Call Agent */}
-            <Button
-                variant="outline"
-                asChild
-                className="rounded-full h-11 px-5 gap-2 border-border/60 hover:border-secondary hover:text-secondary transition-all"
-            >
-                <a href={`tel:${phone}`}>
-                    <Phone className="h-4 w-4" />
-                    Call
-                </a>
-            </Button>
+                {/* Call Agent */}
+                <Button
+                    variant="outline"
+                    asChild
+                    className="w-full rounded-full h-11 px-4 gap-2 border-border/60 hover:border-secondary hover:text-secondary transition-all justify-center"
+                >
+                    <a href={`tel:${phone}`}>
+                        <Phone className="h-4 w-4" />
+                        Call
+                    </a>
+                </Button>
 
-            {/* WhatsApp */}
-            <Button
-                variant="outline"
-                asChild
-                className="rounded-full h-11 px-5 gap-2 border-border/60 hover:border-green-600 hover:text-green-600 transition-all"
-            >
-                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-4 w-4" />
-                    WhatsApp
-                </a>
-            </Button>
+                {/* WhatsApp */}
+                <Button
+                    variant="outline"
+                    asChild
+                    className="w-full rounded-full h-11 px-4 gap-2 border-border/60 hover:border-green-600 hover:text-green-600 transition-all justify-center"
+                >
+                    <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">
+                        <MessageCircle className="h-4 w-4" />
+                        WhatsApp
+                    </a>
+                </Button>
 
-            {/* Share */}
-            <Button
-                variant="outline"
-                onClick={handleShare}
-                className="rounded-full h-11 px-5 gap-2 border-border/60 hover:border-primary hover:text-primary transition-all"
-            >
-                <Share2 className="h-4 w-4" />
-                Share
-            </Button>
+                {/* Share */}
+                <Button
+                    variant="outline"
+                    onClick={handleShare}
+                    className="w-full rounded-full h-11 px-4 gap-2 border-border/60 hover:border-primary hover:text-primary transition-all"
+                >
+                    <Share2 className="h-4 w-4" />
+                    Share
+                </Button>
+            </div>
 
             {/* Mount Booking Dialog */}
             <BookingDialog

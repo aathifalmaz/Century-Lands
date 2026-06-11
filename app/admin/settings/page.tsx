@@ -12,14 +12,14 @@ import { Save, Shield, Bell, Globe } from "lucide-react"
 
 export default function AdminSettingsPage() {
     return (
-        <div className="p-4 space-y-4 min-h-screen">
+        <div className="p-4 pt-1 sm:pt-4 space-y-4 min-h-screen">
             <BackgroundDecor />
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-                    <p className="text-muted-foreground">Manage your admin portal preferences and system configuration.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Settings</h2>
+                    <p className="text-muted-foreground text-sm">Manage your admin portal preferences and system configuration.</p>
                 </div>
-                <Button className="hover:bg-secondary">
+                <Button className="hover:bg-secondary w-full sm:w-auto">
                     <Save className="mr-2 h-4 w-4" /> Save All Changes
                 </Button>
             </div>
@@ -34,7 +34,7 @@ export default function AdminSettingsPage() {
                         </div>
                         <CardDescription>Manage global site settings and defaults.</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid gap-6 md:grid-cols-2">
+                    <CardContent className="grid gap-6 grid-cols-1 sm:grid-cols-2">
                         <div className="space-y-2">
                             <Label htmlFor="siteName">Site Name</Label>
                             <Input id="siteName" defaultValue="Century Lands & Homes" className="rounded-xl" />

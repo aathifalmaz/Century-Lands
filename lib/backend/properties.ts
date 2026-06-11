@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase"
+import { deleteR2FileAction } from "@/lib/actions/auth"
 
 export interface Property {
     id: string
@@ -255,8 +256,7 @@ export async function updateProperty(id: string, property: any, images: string[]
         if (oldImgs && oldImgs.length > 0) {
             const toDelete = oldImgs.filter(oldImg => !images.includes(oldImg.url))
             if (toDelete.length > 0) {
-                const { deleteFromR2 } = await import('./upload')
-                await Promise.all(toDelete.map(img => deleteFromR2(img.url)))
+                await Promise.all(toDelete.map(img => deleteR2FileAction(img.url)))
             }
         }
     } catch (err) {
@@ -301,8 +301,7 @@ export async function deleteProperty(id: string) {
             .eq('property_id', parseInt(id))
             
         if (imgs && imgs.length > 0) {
-            const { deleteFromR2 } = await import('./upload')
-            await Promise.all(imgs.map(img => deleteFromR2(img.url)))
+            await Promise.all(imgs.map(img => deleteR2FileAction(img.url)))
         }
     } catch (err) {
         console.error("Error deleting property images from R2:", err)

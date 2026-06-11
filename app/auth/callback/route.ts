@@ -34,6 +34,20 @@ export async function GET(request: Request) {
     )
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // Fetch user to check registered identity providers
+      const { data: { user } } = await supabase.auth.getUser()
+      const isGoogleLogin = user?.app_metadata?.provider === 'google'
+      const hasNormalEmailIdentity = user?.identities?.some(id => id.provider === 'email')
+
+      if (isGoogleLogin && hasNormalEmailIdentity) {
+        // Sign out the session immediately to prevent access
+        await supabase.auth.signOut()
+        const errorMsg = "This email is registered with password login. Please log in using your email and password."
+        return NextResponse.redirect(
+          `${origin}/login?error=${encodeURIComponent(errorMsg)}`
+        )
+      }
+
       const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
       const isLocalEnv = process.env.NODE_ENV === 'development'
       if (isLocalEnv) {

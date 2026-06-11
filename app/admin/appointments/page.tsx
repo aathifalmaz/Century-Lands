@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, CheckCircle, XCircle, Send, CalendarDays, Clock } from "lucide-react"
+import { Search, CheckCircle, XCircle, Send, CalendarDays, Clock, ChevronLeft, ChevronRight, SlidersHorizontal, User, Building2, Mail } from "lucide-react"
 import { BackgroundDecor } from "@/components/BackgroundDecor";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -19,12 +20,16 @@ import { getAppointments, createAppointment, updateAppointmentStatus, type Appoi
 import { getProperties } from "@/lib/backend/properties"
 import { toast } from "sonner"
 
+const ITEMS_PER_PAGE = 10
+
 export default function AdminAppointmentsPage() {
     const [appointments, setAppointments] = useState<Appointment[]>([])
     const [searchTerm, setSearchTerm] = useState("")
     const [filterType, setFilterType] = useState("All")
     const [filterStatus, setFilterStatus] = useState("All")
     const [loading, setLoading] = useState(true)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [showFilters, setShowFilters] = useState(false)
 
     // Form State for new booking
     const [newBooking, setNewBooking] = useState({
@@ -75,6 +80,17 @@ export default function AdminAppointmentsPage() {
 
         return matchesSearch && matchesType && matchesStatus
     })
+
+    // Pagination
+    const totalPages = Math.ceil(filteredAppointments.length / ITEMS_PER_PAGE)
+    const paginatedAppointments = filteredAppointments.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    )
+
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [searchTerm, filterType, filterStatus])
 
     const handleStatusChange = async (id: number, newStatus: string) => {
         try {
@@ -132,24 +148,28 @@ export default function AdminAppointmentsPage() {
         }
     }
 
-    const timeSlots = [
-        "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
-        "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM",
-        "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM", "05:00 PM"
-    ]
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case "Confirmed": return "bg-emerald-50 text-emerald-700 border-emerald-200"
+            case "Pending": return "bg-amber-50 text-amber-700 border-amber-200"
+            case "Completed": return "bg-blue-50 text-blue-700 border-blue-200"
+            case "Cancelled": return "bg-rose-50 text-rose-700 border-rose-200"
+            default: return ""
+        }
+    }
 
     return (
-        <div className="p-4 space-y-4">
+        <div className="p-4 pt-1 sm:pt-4 space-y-4">
             <BackgroundDecor />
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-primary">Appointments</h2>
-                    <p className="text-muted-foreground">Manage property viewings and meetings.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-primary">Appointments</h2>
+                    <p className="text-muted-foreground text-sm">Manage property viewings and meetings.</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full sm:w-auto">
                     <Dialog>
                         <DialogTrigger asChild>
-                            <Button className="hover:bg-secondary">Book Appointment</Button>
+                            <Button className="hover:bg-secondary flex-1 sm:flex-none">Book Appointment</Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-md w-[95vw] bg-white rounded-2xl">
                             <DialogHeader>
@@ -288,45 +308,59 @@ export default function AdminAppointmentsPage() {
                 </div>
             </div>
 
-            <div className="flex flex-row items-center gap-4 w-full">
-                <div className="relative flex-1 bg-white rounded-md">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search appointments..."
-                        className="pl-9 w-full"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+            {/* Search + Filter Toggle */}
+            <div className="flex flex-col gap-3">
+                <div className="flex gap-2">
+                    <div className="relative flex-1 bg-white rounded-md">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search appointments..."
+                            className="pl-9 w-full"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <Button
+                        variant="outline"
+                        className="md:hidden bg-white shrink-0"
+                        onClick={() => setShowFilters(!showFilters)}
+                    >
+                        <SlidersHorizontal className="h-4 w-4 mr-2" />
+                        Filters
+                    </Button>
                 </div>
 
-                <Select value={filterType} onValueChange={setFilterType}>
-                    <SelectTrigger className="w-[180px] bg-white">
-                        <SelectValue placeholder="Appointment Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="All">All Types</SelectItem>
-                        <SelectItem value="Site Visit">Site Visit</SelectItem>
-                        <SelectItem value="Virtual Tour">Virtual Tour</SelectItem>
-                        <SelectItem value="Meeting">Meeting</SelectItem>
-                        <SelectItem value="Closing">Closing</SelectItem>
-                    </SelectContent>
-                </Select>
+                <div className={`flex flex-col sm:flex-row gap-2 ${showFilters ? 'flex' : 'hidden md:flex'}`}>
+                    <Select value={filterType} onValueChange={setFilterType}>
+                        <SelectTrigger className="w-full sm:w-[180px] bg-white">
+                            <SelectValue placeholder="Appointment Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Types</SelectItem>
+                            <SelectItem value="Site Visit">Site Visit</SelectItem>
+                            <SelectItem value="Virtual Tour">Virtual Tour</SelectItem>
+                            <SelectItem value="Meeting">Meeting</SelectItem>
+                            <SelectItem value="Closing">Closing</SelectItem>
+                        </SelectContent>
+                    </Select>
 
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                    <SelectTrigger className="w-[180px] bg-white">
-                        <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="All">All Statuses</SelectItem>
-                        <SelectItem value="Confirmed">Confirmed</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Completed">Completed</SelectItem>
-                        <SelectItem value="Cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                </Select>
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger className="w-full sm:w-[180px] bg-white">
+                            <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Statuses</SelectItem>
+                            <SelectItem value="Confirmed">Confirmed</SelectItem>
+                            <SelectItem value="Pending">Pending</SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                            <SelectItem value="Cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
 
-            <div className="border rounded-md bg-white overflow-hidden shadow-sm">
+            {/* Desktop Table View */}
+            <div className="hidden md:block border rounded-md bg-white overflow-hidden shadow-sm">
                 <Table>
                     <TableHeader className="bg-slate-50 border-b">
                         <TableRow>
@@ -343,14 +377,14 @@ export default function AdminAppointmentsPage() {
                             <TableRow>
                                 <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">Loading...</TableCell>
                             </TableRow>
-                        ) : filteredAppointments.length === 0 ? (
+                        ) : paginatedAppointments.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="h-24 text-center">
                                     No appointments found.
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredAppointments.map((apt) => (
+                            paginatedAppointments.map((apt) => (
                                 <TableRow key={apt.id} className="hover:bg-slate-50/50">
                                     <TableCell className="font-medium pl-10 py-4">
                                         <div className="text-primary">{apt.customer_name}</div>
@@ -416,6 +450,133 @@ export default function AdminAppointmentsPage() {
                         )}
                     </TableBody>
                 </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+                {loading ? (
+                    <div className="text-center py-12 text-muted-foreground">Loading...</div>
+                ) : paginatedAppointments.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">No appointments found.</div>
+                ) : (
+                    paginatedAppointments.map((apt) => (
+                        <Card key={apt.id} className="overflow-hidden bg-white border shadow-sm">
+                            <CardContent className="p-4 space-y-3">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <User className="h-4 w-4 text-primary shrink-0" />
+                                            <span className="font-semibold text-sm truncate">{apt.customer_name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <Mail className="h-3 w-3 text-muted-foreground shrink-0" />
+                                            <span className="text-xs text-muted-foreground truncate">{apt.email}</span>
+                                        </div>
+                                    </div>
+                                    <Badge className={`text-[10px] h-5 shrink-0 border ${getStatusColor(apt.status || "")}`}>
+                                        {apt.status}
+                                    </Badge>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                    <span className="text-xs font-medium truncate">{apt.property_title}</span>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-1.5">
+                                            <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                                            <span className="font-medium">{apt.appointment_date}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
+                                            <Clock className="h-3.5 w-3.5 text-primary" />
+                                            <span>{apt.appointment_time}</span>
+                                        </div>
+                                    </div>
+                                    <Badge variant="outline" className="text-[10px] h-5 border-primary/20 bg-primary/5 text-primary">
+                                        {apt.type}
+                                    </Badge>
+                                </div>
+
+                                {/* Action Buttons */}
+                                {(apt.status === "Pending" || apt.status === "Confirmed") && (
+                                    <div className="flex gap-2 pt-1 border-t">
+                                        {apt.status === "Pending" && (
+                                            <>
+                                                <Button
+                                                    size="sm"
+                                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs rounded-lg"
+                                                    onClick={() => handleStatusChange(apt.id, "Confirmed")}
+                                                >
+                                                    <CheckCircle className="h-3.5 w-3.5 mr-1" /> Confirm
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="flex-1 text-rose-600 border-rose-200 hover:bg-rose-50 h-8 text-xs rounded-lg"
+                                                    onClick={() => handleStatusChange(apt.id, "Cancelled")}
+                                                >
+                                                    <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel
+                                                </Button>
+                                            </>
+                                        )}
+                                        {apt.status === "Confirmed" && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="flex-1 text-primary hover:bg-primary/5 h-8 text-xs rounded-lg"
+                                                onClick={() => handleStatusChange(apt.id, "Completed")}
+                                            >
+                                                <CheckCircle className="h-3.5 w-3.5 mr-1" /> Mark Done
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2">
+                <div className="text-sm text-muted-foreground order-2 sm:order-1">
+                    Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredAppointments.length)}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredAppointments.length)} of {filteredAppointments.length}
+                </div>
+                {totalPages > 1 && (
+                    <div className="flex items-center gap-1 order-1 sm:order-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <Button
+                                key={page}
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="h-8 w-8 p-0 text-xs"
+                            >
+                                {page}
+                            </Button>
+                        ))}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
             </div>
         </div>
     )

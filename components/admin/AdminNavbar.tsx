@@ -1,7 +1,7 @@
 "use client";
 
 import { UserNav } from "@/components/UserNav";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { AdminSidebar } from "./AdminSidebar";
 import { supabase } from "@/lib/supabase";
@@ -25,12 +25,16 @@ export function AdminNavbar() {
     }, [])
 
     return (
-        <div className="flex items-center p-4 lg:hidden">
+        <div className="flex items-center px-4 pt-4 pb-0 lg:hidden">
             <Sheet>
                 <SheetTrigger className="lg:hidden pr-4">
                     <Menu className="text-[#0b2545]" />
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 bg-slate-900">
+                    <SheetHeader className="sr-only">
+                        <SheetTitle>Admin Navigation</SheetTitle>
+                        <SheetDescription>Access admin panels and management views</SheetDescription>
+                    </SheetHeader>
                     <AdminSidebar />
                 </SheetContent>
             </Sheet>

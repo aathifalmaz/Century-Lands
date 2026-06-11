@@ -27,15 +27,15 @@ export function PropertyFeatures({
     ]
 
     return (
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
             {features.map((feat) => (
                 <div
                     key={feat.label}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/60 dark:bg-white/5 border border-border/40 backdrop-blur-sm"
+                    className="flex flex-col items-center text-center gap-1.5 p-3 sm:p-4 rounded-xl bg-white/60 dark:bg-white/5 border border-border/40 backdrop-blur-sm"
                 >
-                    <feat.icon className="h-6 w-6 text-secondary" />
-                    <span className="text-sm text-muted-foreground">{feat.label}</span>
-                    <span className="text-lg font-semibold text-foreground">{feat.value}</span>
+                    <feat.icon className="h-5 w-5 md:h-6 md:w-6 text-secondary" />
+                    <span className="text-xs text-muted-foreground">{feat.label}</span>
+                    <span className="text-base font-semibold text-foreground">{feat.value}</span>
                 </div>
             ))}
         </div>

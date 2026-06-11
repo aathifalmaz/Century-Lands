@@ -17,7 +17,7 @@ import { Loader2 } from "lucide-react"
 /* ─── testimonials data ─── */
 const testimonials = [
     {
-        quote: "Century Lands helped us find our dream home in Colombo. Their professionalism and attention to detail made the entire process seamless.",
+        quote: "Century Lands & Homes helped us find our dream home in Colombo. Their professionalism and attention to detail made the entire process seamless.",
         name: "Kasun Perera",
         title: "Homeowner",
         subtitle: "Colombo 07",
@@ -65,11 +65,7 @@ export default function ForgotPasswordPage() {
             const result = await checkEmailAndSendResetLink(email, window.location.origin)
             if (result.success) {
                 setSubmitted(true)
-                if (result.sandboxNotice) {
-                    toast.warning(result.sandboxNotice, { duration: 15000 })
-                } else {
-                    toast.success("Password reset request sent!")
-                }
+                toast.success("Password reset request sent!")
             } else {
                 if (result.error === "invalid email") {
                     toast.error("Invalid email. This account does not exist in our database.")
@@ -149,7 +145,7 @@ export default function ForgotPasswordPage() {
                 className="min-h-screen flex flex-col lg:flex-row relative"
             >
                 <BackgroundDecor />
-                
+
                 <div className="w-full lg:w-1/2 flex flex-col justify-between items-center px-8 sm:px-12 md:px-20 lg:px-16 xl:px-24 py-10 bg-white/80 backdrop-blur-xl relative">
                     <div className="absolute top-8 left-8">
                         <Link href="/login" className="flex items-center gap-2 text-sm font-semibold text-primary hover:text-secondary transition-colors group">
@@ -173,14 +169,14 @@ export default function ForgotPasswordPage() {
                                 <form onSubmit={handleResetPasswordRequest} className="space-y-6">
                                     <div className="space-y-1.5">
                                         <Label htmlFor="reset-email" className="text-sm font-medium text-foreground">Email Address</Label>
-                                        <Input 
-                                            id="reset-email" 
-                                            type="email" 
-                                            placeholder="you@example.com" 
-                                            value={email} 
-                                            onChange={(e) => setEmail(e.target.value)} 
-                                            className="h-11 rounded-lg border-border/70 bg-white focus:border-primary focus:ring-primary/20" 
-                                            required 
+                                        <Input
+                                            id="reset-email"
+                                            type="email"
+                                            placeholder="you@example.com"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="h-11 rounded-lg border-border/70 bg-white focus:border-primary focus:ring-primary/20"
+                                            required
                                         />
                                     </div>
 
@@ -193,7 +189,7 @@ export default function ForgotPasswordPage() {
                                 </form>
                             </>
                         ) : (
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 className="text-center bg-green-50/50 border border-green-200/50 rounded-2xl p-6 shadow-sm backdrop-blur-sm"
@@ -220,7 +216,7 @@ export default function ForgotPasswordPage() {
 
                     <p className="text-xs text-muted-foreground mt-16 lg:mt-0">&copy; Century Lands &amp; Homes {new Date().getFullYear()}</p>
                 </div>
-                
+
                 {imagePanel}
             </motion.div>
         </AnimatePresence>

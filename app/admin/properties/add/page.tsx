@@ -148,7 +148,7 @@ export default function AddPropertyPage() {
     }
 
     return (
-        <div className="p-4 space-y-4">
+        <div className="p-4 pt-1 sm:pt-4 space-y-4">
             <BackgroundDecor />
             {/* Header */}
             <div className="flex items-center gap-2">

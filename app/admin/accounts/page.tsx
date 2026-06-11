@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Calculator, Save, TrendingUp, Plus } from "lucide-react"
+import { Calculator, Save, TrendingUp, Plus, ChevronLeft, ChevronRight } from "lucide-react"
 import { getSalesRecords, updateSalesRecord, createSalesRecord, type SalesRecord as SoldProperty } from "@/lib/backend/sales"
 import { getProperties } from "@/lib/backend/properties"
 import { supabase } from "@/lib/supabase"
@@ -22,6 +22,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 
+const ITEMS_PER_PAGE = 10
+
 export default function AccountsPage() {
     const [soldProperties, setSoldProperties] = useState<SoldProperty[]>([])
     const [properties, setProperties] = useState<any[]>([])
@@ -30,6 +32,7 @@ export default function AccountsPage() {
     const [soldPriceInput, setSoldPriceInput] = useState<string>("")
     const [percentageInput, setPercentageInput] = useState<string>("5")
     const [savingSale, setSavingSale] = useState(false)
+    const [currentPage, setCurrentPage] = useState(1)
 
     const [editingId, setEditingId] = useState<number | null>(null)
     const [editValues, setEditValues] = useState<{ soldPrice: string; percentage: string }>({
@@ -155,35 +158,42 @@ export default function AccountsPage() {
     const livePercentage = parseFloat(percentageInput) || 0
     const liveCommission = (liveSoldPrice * livePercentage) / 100
 
+    // Pagination
+    const totalPages = Math.ceil(soldProperties.length / ITEMS_PER_PAGE)
+    const paginatedProperties = soldProperties.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    )
+
     return (
-        <div className="p-8 space-y-8">
-            <div className="flex items-center justify-between">
+        <div className="p-4 pt-1 sm:p-8 space-y-6 sm:space-y-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-third">Accounts Management</h1>
-                    <p className="text-muted-foreground mt-1">Record sales and calculate commissions for sold properties.</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-third">Accounts Management</h1>
+                    <p className="text-muted-foreground mt-1 text-sm">Record sales and calculate commissions for sold properties.</p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                     <Button 
                         onClick={() => setIsDialogOpen(true)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-2 rounded-xl h-11 px-5 shadow-md transition-all active:scale-[0.98]"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-2 rounded-xl h-11 px-5 shadow-md transition-all active:scale-[0.98] w-full sm:w-auto"
                     >
                         <Plus className="h-5 w-5" />
                         Record New Sale
                     </Button>
-                    <div className="bg-emerald-500/10 px-6 py-3 rounded-2xl border border-emerald-500/20 flex items-center gap-4 shadow-sm text-emerald-700">
-                        <div className="h-10 w-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-600">
+                    <div className="bg-emerald-500/10 px-4 sm:px-6 py-3 rounded-2xl border border-emerald-500/20 flex items-center gap-3 sm:gap-4 shadow-sm text-emerald-700">
+                        <div className="h-10 w-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-600 shrink-0">
                             <TrendingUp className="h-5 w-5" />
                         </div>
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-wider">Total Commission Earned</p>
-                            <p className="text-2xl font-bold">LKR {totalCommission.toLocaleString()}</p>
+                        <div className="min-w-0">
+                            <p className="text-xs font-semibold uppercase tracking-wider">Total Commission</p>
+                            <p className="text-xl sm:text-2xl font-bold truncate">LKR {totalCommission.toLocaleString()}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[500px] rounded-2xl p-6">
+                <DialogContent className="sm:max-w-[500px] w-[95vw] rounded-2xl p-6">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-bold text-primary">Record New Property Sale</DialogTitle>
                         <DialogDescription>
@@ -274,7 +284,8 @@ export default function AccountsPage() {
                 </DialogContent>
             </Dialog>
 
-            <Card className="border-border/60 shadow-lg bg-white overflow-hidden">
+            {/* Desktop Table */}
+            <Card className="hidden md:block border-border/60 shadow-lg bg-white overflow-hidden">
                 <CardHeader className="bg-gray-50 border-b border-border/40 py-6">
                     <CardTitle className="text-xl font-bold text-primary flex items-center gap-3">
                         <Calculator className="h-6 w-6 text-emerald-500" />
@@ -294,7 +305,7 @@ export default function AccountsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody className="divide-y divide-border/40">
-                            {soldProperties.map((prop) => (
+                            {paginatedProperties.map((prop) => (
                                 <TableRow key={prop.id} className="hover:bg-emerald-50/30 transition-colors">
                                     <TableCell className="font-semibold text-primary py-5 pl-6">{prop.title}</TableCell>
                                     <TableCell className="text-muted-foreground">{prop.original_price}</TableCell>
@@ -356,6 +367,130 @@ export default function AccountsPage() {
                     </Table>
                 </CardContent>
             </Card>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+                <div className="flex items-center gap-2 mb-2">
+                    <Calculator className="h-5 w-5 text-emerald-500" />
+                    <h3 className="text-lg font-bold text-primary">Sales & Commission Records</h3>
+                </div>
+                {paginatedProperties.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">No sales records yet.</div>
+                ) : (
+                    paginatedProperties.map((prop) => (
+                        <Card key={prop.id} className="overflow-hidden bg-white border shadow-sm">
+                            <CardContent className="p-4 space-y-3">
+                                <div className="flex justify-between items-start">
+                                    <h3 className="font-semibold text-sm text-primary flex-1 min-w-0 truncate pr-2">{prop.title}</h3>
+                                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 px-2 py-0.5 text-xs shrink-0">
+                                        {prop.commission_percentage}%
+                                    </Badge>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                        <span className="text-muted-foreground block">Original Price</span>
+                                        <span className="font-medium">{prop.original_price}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-muted-foreground block">Sold Price</span>
+                                        {editingId === prop.id ? (
+                                            <Input
+                                                type="number"
+                                                value={editValues.soldPrice}
+                                                onChange={(e) => setEditValues({ ...editValues, soldPrice: e.target.value })}
+                                                className="h-8 text-xs mt-0.5"
+                                            />
+                                        ) : (
+                                            <span className="font-bold text-sm">LKR {prop.sold_price.toLocaleString()}</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {editingId === prop.id && (
+                                    <div className="text-xs">
+                                        <span className="text-muted-foreground block">Commission Rate</span>
+                                        <div className="flex items-center gap-1 mt-0.5">
+                                            <Input
+                                                type="number"
+                                                value={editValues.percentage}
+                                                onChange={(e) => setEditValues({ ...editValues, percentage: e.target.value })}
+                                                className="h-8 w-20 text-xs"
+                                            />
+                                            <span className="text-muted-foreground font-bold">%</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex justify-between items-center pt-2 border-t">
+                                    <div>
+                                        <span className="text-xs text-muted-foreground">Commission</span>
+                                        <p className="font-bold text-primary text-base">LKR {prop.commission_amount.toLocaleString()}</p>
+                                    </div>
+                                    {editingId === prop.id ? (
+                                        <Button
+                                            size="sm"
+                                            onClick={() => handleSave(prop.id)}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 h-8 text-xs rounded-lg"
+                                        >
+                                            <Save className="h-3.5 w-3.5" /> Save
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => handleEdit(prop)}
+                                            className="border-emerald-500/40 text-emerald-600 hover:bg-emerald-50 gap-1 h-8 text-xs rounded-lg"
+                                        >
+                                            <Calculator className="h-3.5 w-3.5" /> Edit
+                                        </Button>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 py-2">
+                    <div className="text-sm text-muted-foreground order-2 sm:order-1">
+                        Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, soldProperties.length)}–{Math.min(currentPage * ITEMS_PER_PAGE, soldProperties.length)} of {soldProperties.length}
+                    </div>
+                    <div className="flex items-center gap-1 order-1 sm:order-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <Button
+                                key={page}
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="h-8 w-8 p-0 text-xs"
+                            >
+                                {page}
+                            </Button>
+                        ))}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

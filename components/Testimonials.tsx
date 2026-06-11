@@ -15,7 +15,7 @@ const reviews = [
         name: "Chamila Perera",
         location: "Colombo",
         rating: 5,
-        comment: "Century Lands helped me find my dream home quickly. Highly recommended!",
+        comment: "Century Lands & Homes helped me find my dream home quickly. Highly recommended!",
         photo: "https://randomuser.me/api/portraits/women/68.jpg",
     },
     {

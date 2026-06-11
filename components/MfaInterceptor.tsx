@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, ShieldAlert } from "lucide-react"
 import { toast } from "sonner"
-import { sendMfaOtp } from "@/lib/actions/auth"
+import { sendMfaOtp, verifyMfaOtp } from "@/lib/actions/auth"
 
 export default function MfaInterceptor({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
@@ -39,11 +39,7 @@ export default function MfaInterceptor({ children }: { children: React.ReactNode
                             if (!res.success || res.error) {
                                 throw new Error(res.error || "Failed to send 2FA verification code")
                             }
-                            if (res.sandboxNotice) {
-                                toast.warning(res.sandboxNotice, { duration: 10000 })
-                            } else {
-                                toast.success("Two-Factor Authentication: A verification code has been sent to your email.")
-                            }
+                            toast.success("Two-Factor Authentication: A verification code has been sent to your email.")
                         } catch (err: any) {
                             console.error("MFA OTP send failure", err)
                             toast.error("Failed to send 2FA verification code: " + err.message)
@@ -91,13 +87,10 @@ export default function MfaInterceptor({ children }: { children: React.ReactNode
 
         setLoading(true)
         try {
-            const { error } = await supabase.auth.verifyOtp({
-                email: user.email!,
-                token: otpCode,
-                type: "email"
-            })
-
-            if (error) throw error
+            const res = await verifyMfaOtp(user.email!, otpCode, window.location.origin)
+            if (!res.success || res.error) {
+                throw new Error(res.error || "Failed to verify 2FA code")
+            }
 
             sessionStorage.setItem("2fa_verified", "true")
             setRequire2FA(false)

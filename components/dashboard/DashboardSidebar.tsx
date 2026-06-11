@@ -138,17 +138,6 @@ export function DashboardSidebar() {
                         </Button>
                     </div>
                 </CardContent>
-
-                {/* Profile Stats Widget (Pinned to bottom) */}
-                <div className="p-4 bg-secondary/5 mt-auto border-t border-border/50">
-                    <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-medium text-secondary">Profile Completion</p>
-                        <span className="text-[10px] font-bold text-secondary">85%</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-secondary/20 rounded-full overflow-hidden">
-                        <div className="h-full bg-secondary w-[85%]" />
-                    </div>
-                </div>
             </Card>
         </aside>
     )

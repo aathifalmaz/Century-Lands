@@ -140,23 +140,23 @@ export default function AdminLeadsPage() {
     }
 
     return (
-        <div className="p-6 h-[850px] overflow-hidden flex flex-col space-y-4">
+        <div className="p-4 pt-1 sm:p-6 min-h-screen flex flex-col space-y-4">
             <BackgroundDecor />
 
             {/* Header */}
-            <div className="flex justify-between items-center z-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 z-10">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-third">Leads CRM</h2>
-                    <p className="text-muted-foreground">Manage your sales pipeline and track potential clients.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-third">Leads CRM</h2>
+                    <p className="text-muted-foreground text-sm">Manage your sales pipeline and track potential clients.</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full sm:w-auto">
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                         <DialogTrigger asChild>
-                            <Button className="hover:bg-secondary rounded-xl shadow-md h-11 px-5 font-semibold transition-all">
+                            <Button className="hover:bg-secondary rounded-xl shadow-md h-11 px-5 font-semibold transition-all flex-1 sm:flex-none">
                                 <UserPlus className="mr-2 h-5 w-5" /> Add Lead
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-[500px] rounded-2xl bg-white">
+                        <DialogContent className="sm:max-w-[500px] w-[95vw] rounded-2xl bg-white">
                             <DialogHeader>
                                 <DialogTitle className="text-xl font-bold">Add New Lead</DialogTitle>
                                 <DialogDescription>
@@ -267,7 +267,7 @@ export default function AdminLeadsPage() {
 
             {/* Leads Edit Form Dialog (Triggered by 3 dotted lines click) */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="sm:max-w-[500px] rounded-2xl bg-white">
+                <DialogContent className="sm:max-w-[500px] w-[95vw] rounded-2xl bg-white">
                     <DialogHeader className="flex flex-row justify-between items-start">
                         <div>
                             <DialogTitle className="text-xl font-bold">Edit Lead Details</DialogTitle>
@@ -388,8 +388,8 @@ export default function AdminLeadsPage() {
                     <p className="text-sm font-semibold text-slate-500">Loading Leads CRM Database...</p>
                 </div>
             ) : (
-                <div className="flex-1 overflow-x-auto z-10">
-                    <div className="flex gap-4 h-full min-w-[1200px]">
+                <div className="flex-1 overflow-x-auto overflow-y-auto z-10 pb-4">
+                    <div className="flex flex-col md:flex-row gap-4 md:h-full md:min-w-[1200px]">
                         {stages.map((stage) => (
                             <div key={stage} className="flex-1 flex flex-col bg-slate-50/80 rounded-xl border border-slate-200/60 p-3">
                                 {/* Column Header */}

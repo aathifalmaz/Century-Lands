@@ -41,44 +41,48 @@ export default function PrivacyPolicyPage() {
             </ul>
             <p><strong>We do not sell or rent your personal data to third parties.</strong></p>
 
-            <h2>3. Data Protection</h2>
-            <p>We implement security measures including:</p>
+            <h2>3. Data Protection & Authentication</h2>
+            <p>We use industry-standard security measures to protect your personal data, including:</p>
             <ul>
-                <li>Secure servers</li>
-                <li>Encrypted communications (SSL)</li>
-                <li>Restricted staff access</li>
+                <li><strong>Supabase Authentication:</strong> Your login credentials and authentication sessions are securely handled by Supabase utilizing cryptographically secure tokens.</li>
+                <li><strong>Encrypted Communications:</strong> All data transmitted to and from our website is encrypted using Secure Socket Layer (SSL) technology.</li>
+                <li><strong>Access Control:</strong> Access to user and client database records is strictly restricted to authorized administrative personnel on a need-to-know basis.</li>
             </ul>
-            <p>However, no online system is 100% secure.</p>
+            <p>While we implement strict data safeguarding protocols, please note that no system of transmission or storage over the internet is completely infallible.</p>
 
-            <h2>4. Third-Party Services</h2>
-            <p>We may use trusted third-party tools such as:</p>
+            <h2>4. Third-Party Services & Integrations</h2>
+            <p>To deliver an optimized platform experience, we integrate with trusted third-party providers:</p>
             <ul>
-                <li>Google Analytics</li>
-                <li>Meta Pixel / Ads tracking</li>
-                <li>CRM systems</li>
-                <li>Payment or banking partners</li>
+                <li><strong>Supabase:</strong> For cloud hosting, database management, and user authentication infrastructure.</li>
+                <li><strong>Google Analytics:</strong> To analyze web traffic and understand visitor engagement behavior.</li>
+                <li><strong>Map Embed Services:</strong> To display property locations and highlight nearby landmarks or transport links.</li>
             </ul>
-            <p>These providers follow their own privacy policies.</p>
+            <p>Each of these external providers maintains their own individual privacy policies governing data processing.</p>
 
-            <h2>5. Your Rights</h2>
+            <h2>5. Data Retention</h2>
+            <p>
+                We retain your personal information, such as name, email address, and inquiry records, only for as long as necessary to fulfill the purposes outlined in this policy, satisfy legal, accounting, or reporting requirements, and resolve customer inquiries.
+            </p>
+
+            <h2>6. Your Rights</h2>
             <p>You have the right to:</p>
             <ul>
-                <li>Request access to your data</li>
-                <li>Correct inaccurate data</li>
-                <li>Request deletion</li>
-                <li>Opt-out of marketing communications</li>
+                <li>Request access to the personal data we store about you.</li>
+                <li>Request correction of any inaccurate or outdated information.</li>
+                <li>Request the deletion of your account and personal history, subject to legal retention obligations.</li>
+                <li>Opt-out of email newsletters or marketing communications at any point.</li>
             </ul>
-            <p>Contact us to exercise these rights.</p>
+            <p>Please contact us using the details below to submit a data request.</p>
 
-            <h2>6. Contact Information</h2>
+            <h2>7. Contact Information</h2>
             <p>
-                <strong>Century Lands &amp; Homes</strong><br />
+                <strong>Century Lands &amp; Homes (Pvt) Ltd</strong><br />
                 135/3/10, 3rd Floor, Nabeesha Complex,<br />
                 Kotugodalla Street, Kandy, Sri Lanka
             </p>
             <p>
                 Email: <a href="mailto:centurylandshomes@gmail.com">centurylandshomes@gmail.com</a><br />
-                Phone: 081 XXXXXXXX / 070 XXXXXXXXXX
+                Phone: 070 722 0224
             </p>
         </PolicyLayout>
     )

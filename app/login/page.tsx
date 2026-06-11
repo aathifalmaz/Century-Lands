@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BackgroundDecor } from "@/components/BackgroundDecor"
 import { signInWithEmail, signUpWithEmail, signInWithGoogle } from "@/lib/backend/auth"
-import { sendMfaOtp } from "@/lib/actions/auth"
+import { sendMfaOtp, verifyMfaOtp } from "@/lib/actions/auth"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
@@ -21,7 +21,7 @@ import { supabase } from "@/lib/supabase"
 /* ─── testimonials data ─── */
 const testimonials = [
     {
-        quote: "Century Lands helped us find our dream home in Colombo. Their professionalism and attention to detail made the entire process seamless.",
+        quote: "Century Lands & Homes helped us find our dream home in Colombo. Their professionalism and attention to detail made the entire process seamless.",
         name: "Kasun Perera",
         title: "Homeowner",
         subtitle: "Colombo 07",
@@ -90,6 +90,44 @@ export default function LoginPage() {
                 const newUrl = window.location.pathname
                 window.history.replaceState({}, document.title, newUrl)
             }
+
+            // Parse URL hash for access_token/refresh_token redirect (e.g. from 2FA login)
+            const hash = window.location.hash
+            if (hash) {
+                const hashParams = new URLSearchParams(hash.substring(1))
+                const accessToken = hashParams.get("access_token")
+                const refreshToken = hashParams.get("refresh_token")
+
+                if (accessToken && refreshToken) {
+                    console.log("🔑 Detected 2FA tokens in hash. Setting session...")
+                    setLoading(true)
+
+                    // Clear hash from URL immediately to prevent history/back-button issues
+                    if (typeof window !== "undefined") {
+                        window.history.replaceState({}, document.title, window.location.pathname)
+                    }
+
+                    supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    }).then(({ data, error }) => {
+                        if (error) {
+                            console.error("❌ Failed to set 2FA session:", error.message)
+                            window.location.replace("/")
+                        } else if (data.session) {
+                            console.log("✅ 2FA session established successfully. Redirecting...")
+                            sessionStorage.setItem("2fa_verified", "true")
+                            toast.success("Login successful!")
+                            router.push("/")
+                        }
+                        setLoading(false)
+                    }).catch(err => {
+                        console.error("❌ Exception setting 2FA session:", err)
+                        window.location.replace("/")
+                        setLoading(false)
+                    })
+                }
+            }
         }
     }, [])
 
@@ -135,11 +173,7 @@ export default function LoginPage() {
 
                 setOtpEmail(email)
                 setRequireOtp(true)
-                if (res.sandboxNotice) {
-                    toast.warning(res.sandboxNotice, { duration: 10000 })
-                } else {
-                    toast.success("Two-Factor Authentication: A verification code has been sent to your email.")
-                }
+                toast.success("Two-Factor Authentication: A verification code has been sent to your email.")
             } else {
                 toast.success("Login successful!")
                 router.push("/")
@@ -163,23 +197,22 @@ export default function LoginPage() {
         setOtpLoading(true)
         try {
             console.log("🔑 Attempting OTP verification for:", otpEmail)
-            const { data, error } = await supabase.auth.verifyOtp({
-                email: otpEmail,
-                token: otpCode,
-                type: "email"
-            })
+            const res = await verifyMfaOtp(otpEmail, otpCode, window.location.origin)
 
-            if (error) {
-                console.warn("❌ OTP Verification error details:", error.message || error)
-                toast.error(error.message || "Invalid or expired verification code.")
+            if (!res.success || res.error) {
+                toast.error(res.error || "Invalid or expired verification code.")
                 setOtpLoading(false)
                 return
             }
 
-            console.log("✅ OTP verification successful:", data.user?.id)
+            console.log("✅ OTP verification successful, redirecting to establish session...")
             sessionStorage.setItem("2fa_verified", "true")
             toast.success("Two-Factor Authentication verified! Login successful.")
-            router.push("/")
+            if (res.actionLink) {
+                window.location.href = res.actionLink
+            } else {
+                router.push("/")
+            }
         } catch (error: any) {
             console.warn("❌ OTP Verification unexpected error:", error.message || error)
             toast.error(error.message || "Invalid or expired verification code.")
@@ -195,7 +228,7 @@ export default function LoginPage() {
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault()
-        
+
         // 1. Email format validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!emailRegex.test(signupEmail.trim())) {
@@ -251,7 +284,7 @@ export default function LoginPage() {
                 setLoading(false)
                 return
             }
-            
+
             toast.success("Please verify your account through the link sent to your email to complete registration.")
             setActiveTab("login")
         } catch (error: any) {

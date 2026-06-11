@@ -6,7 +6,6 @@ import { PropertyActions } from "@/components/property-detail/PropertyActions"
 import { PropertyDescription } from "@/components/property-detail/PropertyDescription"
 import { PropertyDetailsTable } from "@/components/property-detail/PropertyDetailsTable"
 import { AmenitiesGrid } from "@/components/property-detail/AmenitiesGrid"
-import { AgentCard } from "@/components/property-detail/AgentCard"
 import { Footer } from "@/components/Footer"
 import { Separator } from "@/components/ui/separator"
 import { notFound } from "next/navigation"
@@ -44,26 +43,38 @@ export default async function PropertyDetailPage({ params }: PropertyPageProps) 
         <div className="min-h-screen bg-background">
             <Navbar forceScrolled />
 
-            <main className="container mx-auto px-6 lg:px-20 pt-24 lg:pt-28 pb-10 space-y-10">
+            <main className="container mx-auto px-0 md:px-6 lg:px-20 pt-24 lg:pt-28 pb-10 space-y-10 w-full max-w-full overflow-x-hidden">
                 {/* 1️⃣ Image Gallery */}
                 <PropertyGallery 
                     images={property.images && property.images.length > 0 ? property.images : ["/mock/1.jpg"]} 
                     title={property.title} 
                 />
 
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12 items-start px-6 md:px-0">
                     {/* Left Column — Content */}
-                    <div className="space-y-10 max-w-4xl">
+                    <div className="space-y-10 max-w-4xl w-full">
                         {/* 2️⃣ Title, Price & Location */}
-                        <PropertyHeader
-                            title={property.title}
-                            tagline={property.tagline}
-                            price={property.price}
-                            pricePerSqft={property.pricePerSqft}
-                            status={property.status}
-                            address={property.address}
-                            location={property.location}
-                        />
+                        <div className="space-y-6">
+                            <PropertyHeader
+                                title={property.title}
+                                tagline={property.tagline}
+                                price={property.price}
+                                pricePerSqft={property.pricePerSqft}
+                                status={property.status}
+                                address={property.address}
+                                location={property.location}
+                            />
+
+                            {/* Mobile action buttons — shown only on mobile/tablet, hidden on desktop */}
+                            <div className="lg:hidden w-full pt-2">
+                                <PropertyActions
+                                    propertyId={property.id}
+                                    propertyTitle={property.title}
+                                    phone={property.agent?.phone || ""}
+                                    whatsapp={property.agent?.phone || ""}
+                                />
+                            </div>
+                        </div>
 
                         <Separator className="bg-border/40" />
 
@@ -100,8 +111,8 @@ export default async function PropertyDetailPage({ params }: PropertyPageProps) 
                         <AmenitiesGrid amenities={property.amenities} />
                     </div>
 
-                    {/* Right Column — Actions & Agent */}
-                    <aside className="space-y-6 sticky top-24">
+                    {/* Right Column — Actions */}
+                    <aside className="hidden lg:block space-y-6 sticky top-24">
                         {/* 7️⃣ Property Actions (Save, Share, Inquire, Book) */}
                         <PropertyActions
                             propertyId={property.id}
@@ -109,13 +120,10 @@ export default async function PropertyDetailPage({ params }: PropertyPageProps) 
                             phone={property.agent?.phone || ""}
                             whatsapp={property.agent?.phone || ""}
                         />
-
-                        {/* 8️⃣ Agent Information Card */}
-                        <AgentCard agent={property.agent} />
                     </aside>
                 </div>
 
-                <Separator className="bg-border/40" />
+                <Separator className="bg-border/40 mx-6 md:mx-0" />
             </main>
 
             <Footer />

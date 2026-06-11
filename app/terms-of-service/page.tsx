@@ -61,8 +61,20 @@ export default function TermsOfServicePage() {
             </ul>
             <p>Clients are advised to perform due diligence.</p>
 
-            <h2>6. Modifications</h2>
-            <p>We may update these terms at any time. Continued use of the website constitutes acceptance.</p>
+            <h2>6. Governing Law & Dispute Resolution</h2>
+            <p>
+                These Terms of Service and any dispute arising from your use of this website shall be governed by and construed in accordance with the laws of the Democratic Socialist Republic of Sri Lanka. You agree that any legal actions or proceedings shall be brought exclusively in the courts located in Kandy, Sri Lanka.
+            </p>
+
+            <h2>7. Contacting Us</h2>
+            <p>
+                If you have any questions regarding these Terms of Service, you may contact us using the details below:
+            </p>
+            <p>
+                <strong>Century Lands &amp; Homes (Pvt) Ltd</strong><br />
+                Email: <a href="mailto:centurylandshomes@gmail.com">centurylandshomes@gmail.com</a><br />
+                Phone: 070 722 0224
+            </p>
         </PolicyLayout>
     )
 }

@@ -72,11 +72,11 @@ export default function AdminDashboardPage() {
     }, [])
 
     return (
-        <div className="p-4 space-y-4 relative min-h-screen pb-10">
+        <div className="p-4 pt-1 sm:pt-4 space-y-4 relative min-h-screen pb-10">
             <BackgroundDecor />
 
-            <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold tracking-tight text-primary">Admin Dashboard Overview</h2>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-primary">Admin Dashboard Overview</h2>
                 {loading && (
                     <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
                         <Activity className="h-4 w-4" />
@@ -86,7 +86,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
                 <Card className="border-l-4 border-l-emerald-500 hover:shadow-lg transition-all duration-300 bg-slate-50">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -148,7 +148,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Charts Section */}
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
 
                 {/* Revenue Chart */}
                 <Card className="bg-slate-50 overflow-hidden">

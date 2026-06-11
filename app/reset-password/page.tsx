@@ -18,7 +18,7 @@ import { Loader2 } from "lucide-react"
 /* ─── testimonials data ─── */
 const testimonials = [
     {
-        quote: "Century Lands helped us find our dream home in Colombo. Their professionalism and attention to detail made the entire process seamless.",
+        quote: "Century Lands & Homes helped us find our dream home in Colombo. Their professionalism and attention to detail made the entire process seamless.",
         name: "Kasun Perera",
         title: "Homeowner",
         subtitle: "Colombo 07",
@@ -73,8 +73,41 @@ export default function ResetPasswordPage() {
 
     // ── Wait for Supabase to process the recovery token from the email link ──
     useEffect(() => {
+        console.log("🟢 ResetPasswordPage mounted. Hash:", typeof window !== "undefined" ? window.location.hash : "no window")
+
+        // Manually parse hash params and set session. Often, @supabase/ssr fails to
+        // process the client-side hash redirect instantly, causing getSession() to return null.
+        const hash = typeof window !== "undefined" ? window.location.hash : ""
+        if (hash) {
+            const params = new URLSearchParams(hash.substring(1))
+            const accessToken = params.get("access_token")
+            const refreshToken = params.get("refresh_token")
+
+            if (accessToken && refreshToken) {
+                console.log("🔑 URL hash access_token detected. Setting session manually...")
+                supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken
+                }).then(({ data, error }) => {
+                    if (error) {
+                        console.error("❌ Manual setSession failed:", error.message)
+                        setSessionError(true)
+                    } else if (data.session) {
+                        console.log("✅ Manual setSession success. User:", data.session.user?.email)
+                        settled.current = true
+                        setSessionReady(true)
+                        setSessionError(false)
+                    }
+                }).catch(err => {
+                    console.error("❌ Manual setSession exception:", err)
+                    setSessionError(true)
+                })
+            }
+        }
+
         // Check if a session already exists (e.g. user refreshes page after token was exchanged)
         supabase.auth.getSession().then(({ data: { session } }) => {
+            console.log("🔍 Initial getSession result:", session ? "Session exists for user: " + session.user.email : "No session")
             if (session && !settled.current) {
                 settled.current = true
                 setSessionReady(true)
@@ -85,7 +118,9 @@ export default function ResetPasswordPage() {
         //   PASSWORD_RECOVERY — implicit flow (older Supabase projects)
         //   SIGNED_IN        — PKCE flow (default in @supabase/ssr)
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log("🔄 onAuthStateChange fired! Event:", event, "Session user:", session?.user?.email || "null")
             if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && session) {
+                console.log("✅ Recovery session detected via", event)
                 settled.current = true
                 setSessionReady(true)
                 setSessionError(false)
@@ -98,6 +133,7 @@ export default function ResetPasswordPage() {
         // Fallback: if no session is established within 8 s, show the expired-link error.
         // We read `settled.current` (a ref) — no stale-closure problem.
         const timeout = setTimeout(() => {
+            console.log("⏳ Fallback timeout reached. settled.current =", settled.current)
             if (!settled.current) {
                 setSessionError(true)
             }
