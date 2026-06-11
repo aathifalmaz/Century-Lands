@@ -76,15 +76,7 @@ export async function checkEmailAndSendResetLink(email: string, origin: string) 
         // Send the email via Resend API
         const resendApiKey = process.env.RESEND_API
 
-        // Log the link prominently for dev/test in all cases
-        console.log(`
-============================================================
-🔑 [DEV/TEST EMAIL LOG]
-To: ${email}
-Type: Password Reset Link
-Link: ${actionLink}
-============================================================
-        `)
+
 
         if (!resendApiKey) {
             console.error("RESEND_API is missing from environment variables.")
@@ -425,15 +417,7 @@ export async function sendMfaOtp(email: string, origin: string) {
         // 4. Send the email via Resend API
         const resendApiKey = process.env.RESEND_API
 
-        // Log the OTP code prominently for dev/test in all cases
-        console.log(`
-============================================================
-🔑 [DEV/TEST EMAIL LOG]
-To: ${email}
-Type: 2FA Verification Code
-OTP: ${sixDigitCode}
-============================================================
-        `)
+
 
         if (!resendApiKey) {
             console.error("RESEND_API is missing from environment variables.")
